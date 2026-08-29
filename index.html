@@ -110,21 +110,60 @@
       </div>
     </div>
 
-    <!-- INVENTORY TABLE -->
+    <!-- ADVANCED FILTER & SEARCH PANEL -->
     <div class="bg-slate-900/90 rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
-      <div class="p-4 border-b border-slate-800 flex flex-wrap items-center justify-between gap-3">
-        <div class="relative flex-1 min-w-[240px]">
+      <div class="p-4 border-b border-slate-800 space-y-3">
+        
+        <!-- Search Input -->
+        <div class="relative w-full">
           <i class="fa-solid fa-search absolute left-3 top-3 text-slate-500 text-xs"></i>
-          <input type="text" id="searchInput" oninput="renderTable()" placeholder="Search item, company, supplier..." 
-            class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-8 pr-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500">
+          <input type="text" id="searchInput" oninput="renderTable()" placeholder="Partial Search (Item name, company, pack, variant, etc.)..." 
+            class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-8 pr-10 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 placeholder-slate-500 shadow-inner">
+          <button onclick="document.getElementById('searchInput').value=''; renderTable();" class="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300 text-xs">
+            <i class="fa-solid fa-times"></i>
+          </button>
         </div>
-        <div class="flex items-center gap-2">
-          <select id="filterSupplier" onchange="renderTable()" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
-            <option value="">All Suppliers (Kisse Aaya)</option>
-          </select>
+
+        <!-- Filter Dropdowns Row -->
+        <div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5 pt-1">
+          <!-- Company Filter -->
+          <div>
+            <label class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Company</label>
+            <select id="filterCompany" onchange="renderTable()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
+              <option value="">All Companies</option>
+            </select>
+          </div>
+
+          <!-- Supplier Filter -->
+          <div>
+            <label class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Supplier (Kisse Aaya)</label>
+            <select id="filterSupplier" onchange="renderTable()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
+              <option value="">All Suppliers</option>
+            </select>
+          </div>
+
+          <!-- MRP Filter -->
+          <div>
+            <label class="text-[10px] uppercase font-bold text-slate-400 block mb-1">MRP Range</label>
+            <select id="filterMrp" onchange="renderTable()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
+              <option value="ALL">All MRP</option>
+              <option value="0-100">Under ₹100</option>
+              <option value="100-500">₹100 - ₹500</option>
+              <option value="500-1000">₹500 - ₹1,000</option>
+              <option value="1000-UP">Above ₹1,000</option>
+            </select>
+          </div>
+
+          <!-- Reset Filter Button -->
+          <div class="flex items-end">
+            <button onclick="resetAllFilters()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-rotate-left text-xs"></i> Reset Filters
+            </button>
+          </div>
         </div>
       </div>
 
+      <!-- INVENTORY TABLE -->
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs border-collapse">
           <thead>
@@ -478,6 +517,7 @@
     window.addEventListener("DOMContentLoaded", () => {
       loadFromStorage();
       renderSuppliers();
+      renderCompanyDropdown();
       renderTable();
       pullFromGitHubSilent();
     });
@@ -489,6 +529,7 @@
         transactions: state.transactions,
         nextInvoiceSeq: state.nextInvoiceSeq || 1
       }));
+      renderCompanyDropdown();
       renderTable();
     }
 
@@ -523,13 +564,26 @@
       }
     }
 
+    function renderCompanyDropdown() {
+      const compFilter = document.getElementById("filterCompany");
+      if (!compFilter) return;
+      const prevVal = compFilter.value;
+      
+      const companies = Array.from(new Set(state.items.map(i => i.company).filter(Boolean))).sort();
+      compFilter.innerHTML = `<option value="">All Companies</option>`;
+      companies.forEach(c => {
+        compFilter.innerHTML += `<option value="${c}">${c}</option>`;
+      });
+      compFilter.value = prevVal;
+    }
+
     function renderSuppliers() {
       const filter = document.getElementById("filterSupplier");
       const modalSelect = document.getElementById("supplierSelect");
       const creditSelect = document.getElementById("creditSupplierSelect");
       const prevFilter = filter.value;
       
-      filter.innerHTML = `<option value="">All Suppliers (Kisse Aaya)</option>`;
+      filter.innerHTML = `<option value="">All Suppliers</option>`;
       modalSelect.innerHTML = `<option value="">Select Existing...</option>`;
       if (creditSelect) creditSelect.innerHTML = `<option value="">Select Supplier...</option>`;
 
@@ -540,6 +594,14 @@
       });
       filter.value = prevFilter;
       renderSupplierManageList();
+    }
+
+    function resetAllFilters() {
+      document.getElementById("searchInput").value = "";
+      document.getElementById("filterCompany").value = "";
+      document.getElementById("filterSupplier").value = "";
+      document.getElementById("filterMrp").value = "ALL";
+      renderTable();
     }
 
     function promptAddSupplierWithPin() {
@@ -634,10 +696,12 @@
       }
     }
 
-    // TABLE RENDERING
+    // ADVANCED PARTIAL SEARCH & FILTER LOGIC
     function renderTable() {
-      const query = document.getElementById("searchInput").value.toLowerCase();
+      const query = document.getElementById("searchInput").value.toLowerCase().trim();
+      const compFilter = document.getElementById("filterCompany").value;
       const supplierFilter = document.getElementById("filterSupplier").value;
+      const mrpFilter = document.getElementById("filterMrp").value;
       const tbody = document.getElementById("inventoryTableBody");
       tbody.innerHTML = "";
 
@@ -645,12 +709,32 @@
       let expiringCount = 0;
       let totalMrpVal = 0;
 
+      // Partial Search tokens
+      const searchTokens = query ? query.split(" ").filter(t => t.length > 0) : [];
+
       const filtered = state.items.filter(item => {
-        const matchesQuery = item.name.toLowerCase().includes(query) || 
-                             item.company.toLowerCase().includes(query) || 
-                             (item.supplier && item.supplier.toLowerCase().includes(query));
+        const name = (item.name || "").toLowerCase();
+        const comp = (item.company || "").toLowerCase();
+        const supp = (item.supplier || "").toLowerCase();
+        const pack = (item.packSize || "").toLowerCase();
+        const vari = (item.variant || "").toLowerCase();
+        const fullCombined = `${name} ${comp} ${supp} ${pack} ${vari}`;
+
+        // Partial match: item should match all tokens
+        const matchesQuery = searchTokens.length === 0 || searchTokens.every(token => fullCombined.includes(token));
+
+        const matchesCompany = !compFilter || item.company === compFilter;
         const matchesSupplier = !supplierFilter || item.supplier === supplierFilter;
-        return matchesQuery && matchesSupplier;
+
+        // MRP Range Filter
+        let matchesMrp = true;
+        const itemMrp = Number(item.mrp) || 0;
+        if (mrpFilter === "0-100") matchesMrp = itemMrp <= 100;
+        else if (mrpFilter === "100-500") matchesMrp = itemMrp > 100 && itemMrp <= 500;
+        else if (mrpFilter === "500-1000") matchesMrp = itemMrp > 500 && itemMrp <= 1000;
+        else if (mrpFilter === "1000-UP") matchesMrp = itemMrp > 1000;
+
+        return matchesQuery && matchesCompany && matchesSupplier && matchesMrp;
       });
 
       state.items.forEach(item => {
@@ -667,7 +751,7 @@
       document.getElementById("statTotalMrp").innerText = `₹${totalMrpVal.toLocaleString('en-IN')}`;
 
       if (filtered.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500">No items found matching the filter.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500">No items match your search or filter criteria.</td></tr>`;
         return;
       }
 
@@ -681,8 +765,8 @@
             <div class="text-[11px] text-slate-400">ID: #${item.id.slice(-5)}</div>
           </td>
           <td class="p-3">
-            <div class="text-xs text-slate-200">${item.company}</div>
-            <div class="text-[11px] text-emerald-400/90 font-medium">${item.supplier || 'N/A'}</div>
+            <div class="text-xs text-slate-200 font-medium">${item.company}</div>
+            <div class="text-[11px] text-emerald-400/90">${item.supplier || 'N/A'}</div>
           </td>
           <td class="p-3 text-slate-300">
             <div>${item.packSize || '-'}</div>
@@ -782,7 +866,7 @@
       }
     }
 
-    // TRANSACTIONS (DEBIT & CREDIT WITH ZERO STOCK RESTRICTION)
+    // TRANSACTIONS
     function formatInvoiceNumber(seq) {
       const numStr = String(seq).padStart(2, '0');
       return `SGMK${numStr}`;
@@ -804,7 +888,6 @@
       const crSelect = document.getElementById("creditSupplierSelect");
       if (crSelect) crSelect.value = item.supplier || "";
 
-      // Stock Check: If stock is 0, default to CREDIT option
       if (item.stock <= 0) {
         document.getElementById("typeCreditRadio").checked = true;
       } else {
@@ -907,7 +990,7 @@
       }
     }
 
-    // PRINT A6 INVOICE
+    // PRINT INVOICE
     function printInvoiceFromTxn(t) {
       document.getElementById("prnInvNo").innerText = t.invNo || "SGMK01";
       document.getElementById("prnCustomer").innerText = t.party || "Retail Cash";
@@ -998,7 +1081,7 @@
       document.getElementById("pnlNetProfit").innerText = `₹${netProfit.toFixed(2)}`;
     }
 
-    // CLOUD GITHUB SYNC
+    // CLOUD SYNC
     async function pullFromGitHubSilent() {
       const url = `https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${GH_CONFIG.path}`;
       try {
@@ -1026,6 +1109,7 @@
             state.nextInvoiceSeq = decryptedData.nextInvoiceSeq || (state.transactions.length + 1);
             saveToStorage();
             renderSuppliers();
+            renderCompanyDropdown();
             renderTable();
           }
         }
@@ -1121,6 +1205,7 @@
           if (parsed.nextInvoiceSeq) state.nextInvoiceSeq = parsed.nextInvoiceSeq;
           saveToStorage();
           renderSuppliers();
+          renderCompanyDropdown();
           alert("Backup successfully restored!");
         } catch(err) {
           alert("Invalid backup file format!");
