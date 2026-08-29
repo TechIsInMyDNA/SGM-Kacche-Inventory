@@ -73,7 +73,7 @@
           <i class="fa-solid fa-cloud-arrow-up" id="syncIcon"></i> <span id="syncText">Sync Cloud</span>
         </button>
         <button onclick="openProfitModal()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-md shadow-indigo-900/30">
-          <i class="fa-solid fa-lock"></i> P&amp;L &amp; Invoices
+          <i class="fa-solid fa-lock"></i> History &amp; P&amp;L
         </button>
       </div>
     </div>
@@ -110,11 +110,9 @@
       </div>
     </div>
 
-    <!-- ADVANCED FILTER & SEARCH PANEL -->
+    <!-- FILTER & SEARCH PANEL -->
     <div class="bg-slate-900/90 rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
       <div class="p-4 border-b border-slate-800 space-y-3">
-        
-        <!-- Search Input -->
         <div class="relative w-full">
           <i class="fa-solid fa-search absolute left-3 top-3 text-slate-500 text-xs"></i>
           <input type="text" id="searchInput" oninput="renderTable()" placeholder="Partial Search (Item name, company, pack, variant, etc.)..." 
@@ -124,9 +122,7 @@
           </button>
         </div>
 
-        <!-- Filter Dropdowns Row -->
         <div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5 pt-1">
-          <!-- Company Filter -->
           <div>
             <label class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Company</label>
             <select id="filterCompany" onchange="renderTable()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
@@ -134,7 +130,6 @@
             </select>
           </div>
 
-          <!-- Supplier Filter -->
           <div>
             <label class="text-[10px] uppercase font-bold text-slate-400 block mb-1">Supplier (Kisse Aaya)</label>
             <select id="filterSupplier" onchange="renderTable()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
@@ -142,7 +137,6 @@
             </select>
           </div>
 
-          <!-- MRP Filter -->
           <div>
             <label class="text-[10px] uppercase font-bold text-slate-400 block mb-1">MRP Range</label>
             <select id="filterMrp" onchange="renderTable()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-300 focus:outline-none focus:border-emerald-500">
@@ -154,7 +148,6 @@
             </select>
           </div>
 
-          <!-- Reset Filter Button -->
           <div class="flex items-end">
             <button onclick="resetAllFilters()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition flex items-center justify-center gap-1.5">
               <i class="fa-solid fa-rotate-left text-xs"></i> Reset Filters
@@ -163,7 +156,6 @@
         </div>
       </div>
 
-      <!-- INVENTORY TABLE -->
       <div class="overflow-x-auto">
         <table class="w-full text-left text-xs border-collapse">
           <thead>
@@ -286,7 +278,7 @@
     </div>
   </div>
 
-  <!-- STOCK TRANSACTION MODAL (CREDIT / DEBIT) -->
+  <!-- STOCK TRANSACTION MODAL (CREDIT / DEBIT WITH DATE SELECTION) -->
   <div id="txnModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -314,9 +306,15 @@
           </div>
         </div>
 
-        <div>
-          <label class="text-[11px] font-medium text-slate-400">Quantity *</label>
-          <input type="number" id="txnQty" min="1" required class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[11px] font-medium text-slate-400">Transaction Date *</label>
+            <input type="date" id="txnDate" required class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="text-[11px] font-medium text-slate-400">Quantity *</label>
+            <input type="number" id="txnQty" min="1" required class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+          </div>
         </div>
 
         <!-- DEBIT FIELDS -->
@@ -364,7 +362,7 @@
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
         <div class="flex items-center gap-2">
           <i class="fa-solid fa-chart-line text-indigo-400 text-lg"></i>
-          <h3 class="font-bold text-base text-slate-100">Private Profit &amp; Loss / Invoice Dashboard</h3>
+          <h3 class="font-bold text-base text-slate-100">Stock Logs &amp; Profit Dashboard</h3>
         </div>
         <button onclick="closeProfitModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
       </div>
@@ -375,7 +373,7 @@
             <i class="fa-solid fa-key"></i>
           </div>
           <h4 class="font-semibold text-sm text-slate-200">PIN Required</h4>
-          <p class="text-xs text-slate-400 mt-1">Enter 4-digit security PIN to view sales, margin &amp; invoices</p>
+          <p class="text-xs text-slate-400 mt-1">Enter 4-digit security PIN to view transactions &amp; margin logs</p>
         </div>
         <div class="flex gap-2">
           <input type="password" id="pinInput" maxlength="6" placeholder="Enter PIN" class="bg-slate-950 border border-slate-800 text-center font-bold tracking-widest text-lg rounded-lg px-4 py-2 w-40 text-white focus:outline-none focus:border-indigo-500">
@@ -387,11 +385,11 @@
       <div id="profitContent" class="space-y-4 hidden">
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-            <div class="text-xs text-slate-400">Total Sales Value</div>
+            <div class="text-xs text-slate-400">Total Sales Value (Debit)</div>
             <div class="text-xl font-black text-emerald-400 mt-1" id="pnlTotalSales">₹0.00</div>
           </div>
           <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
-            <div class="text-xs text-slate-400">Total Cost (Rate)</div>
+            <div class="text-xs text-slate-400">Total Cost of Sold Stock</div>
             <div class="text-xl font-black text-slate-300 mt-1" id="pnlTotalCost">₹0.00</div>
           </div>
           <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
@@ -400,17 +398,17 @@
           </div>
         </div>
 
-        <h5 class="text-xs font-bold uppercase tracking-wider text-slate-400 pt-2">Debit / Sales History &amp; Invoices</h5>
+        <h5 class="text-xs font-bold uppercase tracking-wider text-slate-400 pt-2">All Transactions Log (Credit &amp; Debit History)</h5>
         <div class="overflow-x-auto border border-slate-800 rounded-xl">
           <table class="w-full text-left text-xs border-collapse">
             <thead>
               <tr class="bg-slate-950 border-b border-slate-800 text-slate-400">
-                <th class="p-2.5">Inv No</th>
+                <th class="p-2.5">Type / Inv</th>
                 <th class="p-2.5">Date</th>
                 <th class="p-2.5">Item</th>
-                <th class="p-2.5">Customer / Party</th>
+                <th class="p-2.5">Party / Supplier</th>
                 <th class="p-2.5 text-center">Qty</th>
-                <th class="p-2.5">Rate / Sale</th>
+                <th class="p-2.5">Price / Rate</th>
                 <th class="p-2.5 text-right font-bold text-indigo-400">Profit (₹)</th>
                 <th class="p-2.5 text-center">Print</th>
               </tr>
@@ -709,7 +707,6 @@
       let expiringCount = 0;
       let totalMrpVal = 0;
 
-      // Partial Search tokens
       const searchTokens = query ? query.split(" ").filter(t => t.length > 0) : [];
 
       const filtered = state.items.filter(item => {
@@ -720,13 +717,10 @@
         const vari = (item.variant || "").toLowerCase();
         const fullCombined = `${name} ${comp} ${supp} ${pack} ${vari}`;
 
-        // Partial match: item should match all tokens
         const matchesQuery = searchTokens.length === 0 || searchTokens.every(token => fullCombined.includes(token));
-
         const matchesCompany = !compFilter || item.company === compFilter;
         const matchesSupplier = !supplierFilter || item.supplier === supplierFilter;
 
-        // MRP Range Filter
         let matchesMrp = true;
         const itemMrp = Number(item.mrp) || 0;
         if (mrpFilter === "0-100") matchesMrp = itemMrp <= 100;
@@ -866,7 +860,7 @@
       }
     }
 
-    // TRANSACTIONS
+    // TRANSACTIONS (DEBIT & CREDIT WITH DATE SELECTOR)
     function formatInvoiceNumber(seq) {
       const numStr = String(seq).padStart(2, '0');
       return `SGMK${numStr}`;
@@ -881,6 +875,9 @@
       document.getElementById("txnItemSubtitle").innerText = `Stock: ${item.stock} | Rate: ₹${item.rate} | MRP: ₹${item.mrp}`;
       document.getElementById("txnSalePrice").value = item.mrp;
       document.getElementById("txnParty").value = "Retail Sale";
+      
+      // Default transaction date to today (YYYY-MM-DD)
+      document.getElementById("txnDate").value = new Date().toISOString().split('T')[0];
       
       const currentSeq = state.nextInvoiceSeq || 1;
       document.getElementById("previewInvoiceNo").innerText = formatInvoiceNumber(currentSeq);
@@ -929,6 +926,7 @@
 
       const type = document.querySelector('input[name="txnType"]:checked').value;
       const qty = parseInt(document.getElementById("txnQty").value);
+      const selectedTxnDate = document.getElementById("txnDate").value || new Date().toISOString().split('T')[0];
 
       if (type === "DEBIT") {
         if (item.stock <= 0) {
@@ -953,8 +951,9 @@
         const profit = (salePrice - item.rate) * qty;
         const txnObj = {
           id: 'TXN_' + Date.now(),
+          type: 'DEBIT',
           invNo: invNo,
-          date: new Date().toISOString().split('T')[0],
+          date: selectedTxnDate,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           itemId: item.id,
           itemName: item.name,
@@ -984,9 +983,29 @@
         }
         item.stock += qty;
         item.supplier = creditSupplier;
+
+        const creditTxnObj = {
+          id: 'TXN_' + Date.now(),
+          type: 'CREDIT',
+          invNo: 'CREDIT',
+          date: selectedTxnDate,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          itemId: item.id,
+          itemName: item.name,
+          packSize: item.packSize || '',
+          variant: item.variant || '',
+          expiry: item.expiry || '',
+          qty: qty,
+          rate: item.rate,
+          salePrice: item.rate,
+          party: creditSupplier,
+          profit: 0
+        };
+
+        state.transactions.unshift(creditTxnObj);
         saveToStorage();
         closeTxnModal();
-        alert(`Stock Credited! +${qty} added from supplier: ${creditSupplier}`);
+        alert(`Stock Credited! +${qty} added on ${selectedTxnDate} from supplier: ${creditSupplier}`);
       }
     }
 
@@ -1015,7 +1034,7 @@
       }
     }
 
-    // P&L DASHBOARD
+    // P&L DASHBOARD & LOGS
     function openProfitModal() {
       document.getElementById("pinInput").value = "";
       document.getElementById("pinError").classList.add("hidden");
@@ -1049,28 +1068,42 @@
       tbody.innerHTML = "";
 
       state.transactions.forEach(t => {
-        const salesVal = t.salePrice * t.qty;
-        const costVal = t.rate * t.qty;
-        totalSales += salesVal;
-        totalCost += costVal;
-        netProfit += t.profit;
+        const isCredit = (t.type === 'CREDIT' || t.invNo === 'CREDIT');
+        
+        if (!isCredit) {
+          const salesVal = (t.salePrice || 0) * t.qty;
+          const costVal = (t.rate || 0) * t.qty;
+          totalSales += salesVal;
+          totalCost += costVal;
+          netProfit += (t.profit || 0);
+        }
 
         const tr = document.createElement("tr");
         tr.className = "hover:bg-slate-800/30";
         tr.innerHTML = `
-          <td class="p-2.5 font-mono font-bold text-emerald-400">${t.invNo || 'SGMK--'}</td>
+          <td class="p-2.5 font-mono font-bold">
+            ${isCredit 
+              ? '<span class="text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded text-[10px] border border-emerald-500/30">CREDIT</span>' 
+              : `<span class="text-indigo-300 font-bold">${t.invNo || 'SGMK--'}</span>`}
+          </td>
           <td class="p-2.5 font-mono text-slate-400">${t.date}</td>
           <td class="p-2.5 font-semibold text-slate-200">${t.itemName}</td>
-          <td class="p-2.5 text-indigo-300">${t.party}</td>
-          <td class="p-2.5 text-center font-bold text-slate-200">${t.qty}</td>
-          <td class="p-2.5 font-mono text-slate-300">₹${t.rate} / ₹${t.salePrice}</td>
-          <td class="p-2.5 text-right font-mono font-bold ${t.profit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
-            ₹${t.profit.toFixed(2)}
+          <td class="p-2.5 text-slate-300">${t.party}</td>
+          <td class="p-2.5 text-center font-bold ${isCredit ? 'text-emerald-400' : 'text-rose-400'}">
+            ${isCredit ? '+' : '-'}${t.qty}
+          </td>
+          <td class="p-2.5 font-mono text-slate-300">
+            ${isCredit ? `₹${t.rate}` : `₹${t.rate} / ₹${t.salePrice}`}
+          </td>
+          <td class="p-2.5 text-right font-mono font-bold ${isCredit ? 'text-slate-500' : (t.profit >= 0 ? 'text-emerald-400' : 'text-rose-400')}">
+            ${isCredit ? '-' : '₹' + t.profit.toFixed(2)}
           </td>
           <td class="p-2.5 text-center">
-            <button onclick="printInvoiceById('${t.id}')" title="Print A6 Bill" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 text-xs">
-              <i class="fa-solid fa-print text-indigo-400"></i>
-            </button>
+            ${!isCredit ? `
+              <button onclick="printInvoiceById('${t.id}')" title="Print A6 Bill" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 text-xs">
+                <i class="fa-solid fa-print text-indigo-400"></i>
+              </button>
+            ` : '<span class="text-slate-600">-</span>'}
           </td>
         `;
         tbody.appendChild(tr);
