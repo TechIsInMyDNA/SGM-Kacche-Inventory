@@ -4,6 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SGM Kacche Inventory</title>
+
+  <!-- PWA SETTINGS FOR STANDALONE & TASKBAR PINNING -->
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="SGM Inventory">
+
+  <!-- INLINE DATA-URI MANIFEST -->
+  <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22SGM%20Kacche%20Inventory%22%2C%22short_name%22%3A%22SGM%20Inv%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%230f172a%22%2C%22theme_color%22%3A%22%230f172a%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22data%3Aimage%2Fsvg%2Bxml%2C%253Csvg%2520xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%2520viewBox%3D%270%25200%2520512%2520512%27%253E%253Crect%2520width%3D%27512%27%2520height%3D%27512%27%2520rx%3D%27128%27%2520fill%3D%27%252310b981%27%2F%253E%253Ctext%2520x%3D%2750%2525%27%2520y%3D%2760%2525%27%2520dominant-baseline%3D%27middle%27%2520text-anchor%3D%27middle%27%2520fill%3D%27white%27%2520font-size%3D%27260%27%2520font-family%3D%27sans-serif%27%2520font-weight%3D%27bold%27%253ES%253C%2Ftext%253E%253C%2Fsvg%253E%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fsvg%2Bxml%22%2C%22purpose%22%3A%22any%20maskable%22%7D%5D%7D">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -66,6 +76,11 @@
       </div>
 
       <div class="flex items-center gap-2">
+        <!-- PWA INSTALL BUTTON (CHROME/DESKTOP/MOBILE) -->
+        <button id="pwaInstallBtn" onclick="installPWA()" class="hidden px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs font-bold transition items-center gap-1.5 shadow-md shadow-amber-900/30 animate-pulse">
+          <i class="fa-solid fa-download"></i> Install App
+        </button>
+
         <button onclick="openSupplierManageModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5 shadow-sm">
           <i class="fa-solid fa-truck-field text-emerald-400"></i> Manage Suppliers
         </button>
@@ -110,7 +125,7 @@
       </div>
     </div>
 
-    <!-- FILTER & SEARCH PANEL -->
+    <!-- ADVANCED FILTER & SEARCH PANEL -->
     <div class="bg-slate-900/90 rounded-2xl border border-slate-800 shadow-xl overflow-hidden">
       <div class="p-4 border-b border-slate-800 space-y-3">
         <div class="relative w-full">
@@ -502,6 +517,39 @@
       nextInvoiceSeq: 1
     };
 
+    // PWA INSTALL LOGIC
+    let deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      const btn = document.getElementById('pwaInstallBtn');
+      if (btn) {
+        btn.classList.remove('hidden');
+        btn.classList.add('flex');
+      }
+    });
+
+    async function installPWA() {
+      if (!deferredPrompt) {
+        alert("PWA Install prompt is ready in your browser menu (Click 3 dots > Install 'SGM Kacche Inventory').");
+        return;
+      }
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        const btn = document.getElementById('pwaInstallBtn');
+        if (btn) btn.classList.add('hidden');
+      }
+      deferredPrompt = null;
+    }
+
+    // REGISTER BLANK SERVICE WORKER VIA BLOB FOR PWA INSTALLABILITY
+    if ('serviceWorker' in navigator) {
+      const swCode = "self.addEventListener('fetch', function(e) { e.respondWith(fetch(e.request).catch(function() { return new Response('Offline'); })); });";
+      const blob = new Blob([swCode], { type: 'application/javascript' });
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(() => {});
+    }
+
     function requestPinAuth(actionName = "Action") {
       const pin = prompt(`Enter 4-digit PIN to ${actionName}:`);
       if (pin === SYSTEM_PIN) {
@@ -860,7 +908,7 @@
       }
     }
 
-    // TRANSACTIONS (DEBIT & CREDIT WITH DATE SELECTOR)
+    // TRANSACTIONS
     function formatInvoiceNumber(seq) {
       const numStr = String(seq).padStart(2, '0');
       return `SGMK${numStr}`;
@@ -876,7 +924,6 @@
       document.getElementById("txnSalePrice").value = item.mrp;
       document.getElementById("txnParty").value = "Retail Sale";
       
-      // Default transaction date to today (YYYY-MM-DD)
       document.getElementById("txnDate").value = new Date().toISOString().split('T')[0];
       
       const currentSeq = state.nextInvoiceSeq || 1;
