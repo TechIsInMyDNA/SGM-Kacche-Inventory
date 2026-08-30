@@ -89,10 +89,10 @@
         <button onclick="openSupplierManageModal()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-semibold border border-slate-700 transition flex items-center gap-1.5 shadow-sm">
           <i class="fa-solid fa-truck-field text-emerald-400"></i> Suppliers
         </button>
-        <button onclick="syncWithGitHub()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-md shadow-emerald-900/30">
+        <button onclick="syncWithGitHub()" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-md shadow-emerald-900/30">
           <i class="fa-solid fa-cloud-arrow-up" id="syncIcon"></i> <span id="syncText">Sync</span>
         </button>
-        <button onclick="openProfitModal()" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-md shadow-indigo-900/30">
+        <button onclick="openProfitModal()" class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shadow-md shadow-indigo-900/30">
           <i class="fa-solid fa-lock"></i> History &amp; P&amp;L
         </button>
       </div>
@@ -182,9 +182,9 @@
             <tr class="bg-slate-950/70 border-b border-slate-800 text-slate-400 font-semibold uppercase tracking-wider">
               <th class="p-3">Item Details</th>
               <th class="p-3">Company &amp; Supplier</th>
-              <th class="p-3">Pack &amp; Variant</th>
+              <th class="p-3">Pack &amp; Unit Size</th>
               <th class="p-3">Expiry</th>
-              <th class="p-3">Pricing (Rate / MRP)</th>
+              <th class="p-3">Pricing (Pack / Per Unit)</th>
               <th class="p-3 text-center">Stock</th>
               <th class="p-3 text-right">Actions</th>
             </tr>
@@ -196,7 +196,7 @@
     </div>
   </main>
 
-  <!-- ADD / EDIT ITEM MODAL -->
+  <!-- ADD / EDIT / DUPLICATE ITEM MODAL -->
   <div id="itemModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -218,10 +218,14 @@
           </div>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
             <label class="text-[11px] font-medium text-slate-400">Pack Size</label>
             <input type="text" id="packSize" placeholder="e.g. 10x10, 100ml" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+          </div>
+          <div>
+            <label class="text-[11px] font-medium text-slate-400">Unit Size (Units/Pack)</label>
+            <input type="number" id="unitSize" min="1" placeholder="e.g. 10, 1" value="1" oninput="calculatePerUnitPreview()" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
           </div>
           <div>
             <label class="text-[11px] font-medium text-slate-400">Variant</label>
@@ -235,18 +239,20 @@
             <input type="date" id="expDate" required class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
           </div>
           <div>
-            <label class="text-[11px] font-medium text-slate-400">Purchase Rate (₹) *</label>
-            <input type="number" step="0.01" id="rate" required class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            <label class="text-[11px] font-medium text-slate-400">Purchase Rate (₹/Pack) *</label>
+            <input type="number" step="0.01" id="rate" required oninput="calculatePerUnitPreview()" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            <span class="text-[10px] text-slate-500 mt-0.5 block" id="ratePerUnitLabel">Rate/Unit: ₹0.00</span>
           </div>
           <div>
-            <label class="text-[11px] font-medium text-slate-400">MRP (₹) *</label>
-            <input type="number" step="0.01" id="mrp" required class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            <label class="text-[11px] font-medium text-slate-400">MRP (₹/Pack) *</label>
+            <input type="number" step="0.01" id="mrp" required oninput="calculatePerUnitPreview()" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            <span class="text-[10px] text-slate-500 mt-0.5 block" id="mrpPerUnitLabel">MRP/Unit: ₹0.00</span>
           </div>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
-            <label class="text-[11px] font-medium text-slate-400">Initial Stock Quantity *</label>
+            <label class="text-[11px] font-medium text-slate-400">Initial Stock Quantity (Packs) *</label>
             <input type="number" id="currentStock" required min="0" value="1" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
           </div>
           <div>
@@ -392,7 +398,7 @@
     </div>
   </div>
 
-  <!-- STOCK TRANSACTION MODAL (CREDIT / DEBIT WITH DATE SELECTION) -->
+  <!-- STOCK TRANSACTION MODAL (CREDIT / DEBIT WITH DATE & NEW EXPIRY SELECTION) -->
   <div id="txnModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -426,7 +432,7 @@
             <input type="date" id="txnDate" required class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
           </div>
           <div>
-            <label class="text-[11px] font-medium text-slate-400">Quantity *</label>
+            <label class="text-[11px] font-medium text-slate-400">Quantity (Packs) *</label>
             <input type="number" id="txnQty" min="1" required class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
           </div>
         </div>
@@ -438,7 +444,7 @@
             <input type="text" id="txnParty" placeholder="e.g. Retail Cash, Mr. Sharma" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
           </div>
           <div>
-            <label class="text-[11px] font-medium text-slate-400">Selling Price / Unit (Default: MRP)</label>
+            <label class="text-[11px] font-medium text-slate-400">Selling Price / Pack (Default: MRP)</label>
             <input type="number" step="0.01" id="txnSalePrice" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
           </div>
           <div class="p-2.5 rounded-lg bg-slate-950 border border-slate-800 flex justify-between items-center text-xs">
@@ -447,17 +453,23 @@
           </div>
         </div>
 
-        <!-- CREDIT FIELDS (KISSE AAYA) -->
+        <!-- CREDIT FIELDS (KISSE AAYA & NEW EXPIRY) -->
         <div id="creditFields" class="space-y-3 hidden">
-          <div>
-            <label class="text-[11px] font-medium text-slate-400">Kisse Aaya (Supplier / Source) *</label>
-            <div class="flex gap-2 mt-1">
-              <select id="creditSupplierSelect" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
-                <option value="">Select Supplier...</option>
-              </select>
-              <button type="button" onclick="promptAddSupplierWithPin()" class="px-3 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg border border-slate-700 text-slate-200">
-                +Add
-              </button>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label class="text-[11px] font-medium text-slate-400">New Expiry Date (Optional)</label>
+              <input type="date" id="creditNewExpiry" class="w-full mt-1 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+            </div>
+            <div>
+              <label class="text-[11px] font-medium text-slate-400">Kisse Aaya (Supplier) *</label>
+              <div class="flex gap-1.5 mt-1">
+                <select id="creditSupplierSelect" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-emerald-500">
+                  <option value="">Select Supplier...</option>
+                </select>
+                <button type="button" onclick="promptAddSupplierWithPin()" class="px-2.5 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg border border-slate-700 text-slate-200">
+                  +
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -549,7 +561,7 @@
           <div><strong>Customer:</strong> <span id="prnCustomer">Retail Cash</span></div>
         </div>
         <div style="text-align: right;">
-          <div><strong>Date:</strong> <span id="prnDate">2026-08-29</span></div>
+          <div><strong>Date:</strong> <span id="prnDate">2026-08-30</span></div>
           <div><strong>Time:</strong> <span id="prnTime">10:30 PM</span></div>
         </div>
       </div>
@@ -567,7 +579,7 @@
           <tr>
             <td style="padding: 6px 2px;">
               <div id="prnItemName" style="font-weight: bold;">Paracetamol 650</div>
-              <div id="prnItemMeta" style="font-size: 8px; color: #555;">Pack: 10x10 | Expiry: 12/27</div>
+              <div id="prnItemMeta" style="font-size: 8px; color: #555;">Pack: 10x10 | Exp: 12/27</div>
             </td>
             <td id="prnQty" style="text-align: center; padding: 6px 2px;">2</td>
             <td id="prnRate" style="text-align: right; padding: 6px 2px;">₹30.00</td>
@@ -613,11 +625,10 @@
       items: [],
       suppliers: ["Direct Cash", "Wholesale Dist", "Agency Gondia"],
       transactions: [],
-      orders: [], // Pending stockist requirements
+      orders: [],
       nextInvoiceSeq: 1
     };
 
-    // WINDOWS 7 / PWA INSTALL HELPER
     let deferredPrompt = null;
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
@@ -629,7 +640,6 @@
         deferredPrompt.prompt();
         deferredPrompt = null;
       } else {
-        // Fallback Modal for Windows 7 older Chrome
         document.getElementById('win7GuideModal').classList.remove('hidden');
         document.getElementById('win7GuideModal').classList.add('flex');
       }
@@ -640,7 +650,6 @@
       document.getElementById('win7GuideModal').classList.remove('flex');
     }
 
-    // REGISTRATION OF LOCAL BLOB SERVICE WORKER
     if ('serviceWorker' in navigator) {
       try {
         const swCode = "self.addEventListener('fetch', function(e) { e.respondWith(fetch(e.request).catch(function() { return new Response('Offline'); })); });";
@@ -688,7 +697,10 @@
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
-          state.items = parsed.items || [];
+          state.items = (parsed.items || []).map(i => {
+            if (!i.unitSize) i.unitSize = 1; // backward compatibility
+            return i;
+          });
           state.suppliers = parsed.suppliers || ["Direct Cash", "Wholesale Dist", "Agency Gondia"];
           state.transactions = parsed.transactions || [];
           state.orders = parsed.orders || [];
@@ -848,6 +860,19 @@
       }
     }
 
+    // DYNAMIC PER-UNIT CALCULATION PREVIEW IN FORM
+    function calculatePerUnitPreview() {
+      const uSize = parseFloat(document.getElementById("unitSize").value) || 1;
+      const rateVal = parseFloat(document.getElementById("rate").value) || 0;
+      const mrpVal = parseFloat(document.getElementById("mrp").value) || 0;
+
+      const ratePerUnit = (rateVal / uSize).toFixed(2);
+      const mrpPerUnit = (mrpVal / uSize).toFixed(2);
+
+      document.getElementById("ratePerUnitLabel").innerText = `Rate/Unit: ₹${ratePerUnit}`;
+      document.getElementById("mrpPerUnitLabel").innerText = `MRP/Unit: ₹${mrpPerUnit}`;
+    }
+
     // ADVANCED PARTIAL SEARCH & FILTER LOGIC
     function renderTable() {
       const query = document.getElementById("searchInput").value.toLowerCase().trim();
@@ -905,6 +930,10 @@
 
       filtered.forEach(item => {
         const exp = getExpiryStatus(item.expiry);
+        const uSize = Number(item.unitSize) || 1;
+        const perUnitMrp = (Number(item.mrp) / uSize).toFixed(2);
+        const perUnitRate = (Number(item.rate) / uSize).toFixed(2);
+
         const tr = document.createElement("tr");
         tr.className = "hover:bg-slate-800/40 transition";
         tr.innerHTML = `
@@ -917,33 +946,37 @@
             <div class="text-[11px] text-emerald-400/90">${item.supplier || 'N/A'}</div>
           </td>
           <td class="p-3 text-slate-300">
-            <div>${item.packSize || '-'}</div>
-            <span class="inline-block px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 border border-slate-700">${item.variant || '-'}</span>
+            <div class="font-medium">${item.packSize || '-'}</div>
+            <div class="text-[10px] text-indigo-300 font-mono">1 Pack = ${uSize} Units</div>
+            <span class="inline-block px-1.5 py-0.5 rounded bg-slate-800 text-[10px] text-slate-400 border border-slate-700 mt-0.5">${item.variant || '-'}</span>
           </td>
           <td class="p-3">
             <div class="text-xs text-slate-200 font-mono">${item.expiry}</div>
             <span class="inline-block mt-0.5 px-2 py-0.5 rounded-full text-[10px] border ${exp.badge}">${exp.text}</span>
           </td>
           <td class="p-3">
-            <div class="text-xs font-mono text-slate-300">Rate: ₹${Number(item.rate).toFixed(2)}</div>
-            <div class="text-xs font-mono font-bold text-emerald-400">MRP: ₹${Number(item.mrp).toFixed(2)}</div>
+            <div class="text-xs font-mono text-slate-300">Rate: ₹${Number(item.rate).toFixed(2)} <span class="text-[10px] text-slate-500">(₹${perUnitRate}/u)</span></div>
+            <div class="text-xs font-mono font-bold text-emerald-400">MRP: ₹${Number(item.mrp).toFixed(2)} <span class="text-[10px] text-emerald-500/80 font-normal">(₹${perUnitMrp}/u)</span></div>
           </td>
           <td class="p-3 text-center">
             <span class="inline-block px-3 py-1 rounded-lg text-xs font-black ${item.stock > 0 ? 'bg-slate-800 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/30'}">
-              ${item.stock}
+              ${item.stock} <span class="text-[10px] font-normal text-slate-400">pk (${item.stock * uSize} u)</span>
             </span>
           </td>
           <td class="p-3 text-right space-x-1 whitespace-nowrap">
-            <button onclick="quickAddOrderPrompt('${item.id}')" title="Add to Stockist Order" class="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 rounded border border-amber-500/30 font-bold">
+            <button onclick="quickAddOrderPrompt('${item.id}')" title="Add to Stockist Order" class="px-2 py-1 bg-amber-500/20 hover:bg-amber-500/40 text-amber-300 rounded border border-amber-500/30 font-bold">
               <i class="fa-solid fa-cart-plus text-xs"></i>
             </button>
-            <button onclick="openTxnModal('${item.id}')" title="Debit / Credit" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700">
+            <button onclick="openTxnModal('${item.id}')" title="Debit / Credit" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700">
               <i class="fa-solid fa-right-left text-xs"></i>
             </button>
-            <button onclick="editItem('${item.id}')" title="Edit Item (PIN Protected)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700">
+            <button onclick="duplicateItem('${item.id}')" title="Duplicate / Copy Item (PIN Protected)" class="px-2 py-1 bg-slate-800 hover:bg-indigo-900/50 text-indigo-300 rounded border border-slate-700">
+              <i class="fa-solid fa-copy text-xs"></i>
+            </button>
+            <button onclick="editItem('${item.id}')" title="Edit Item (PIN Protected)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700">
               <i class="fa-solid fa-pencil text-xs"></i>
             </button>
-            <button onclick="deleteItem('${item.id}')" title="Delete Item (PIN Protected)" class="px-2.5 py-1 bg-slate-800 hover:bg-rose-900/50 text-rose-400 rounded border border-slate-700">
+            <button onclick="deleteItem('${item.id}')" title="Delete Item (PIN Protected)" class="px-2 py-1 bg-slate-800 hover:bg-rose-900/50 text-rose-400 rounded border border-slate-700">
               <i class="fa-solid fa-trash text-xs"></i>
             </button>
           </td>
@@ -955,7 +988,9 @@
     function openItemModal(isEdit = false) {
       document.getElementById("itemForm").reset();
       document.getElementById("editItemId").value = "";
+      document.getElementById("unitSize").value = "1";
       document.getElementById("itemModalTitle").innerText = isEdit ? "Edit Inventory Item" : "Add New Inventory Item";
+      calculatePerUnitPreview();
       document.getElementById("itemModal").classList.remove("hidden");
       document.getElementById("itemModal").classList.add("flex");
     }
@@ -973,6 +1008,7 @@
         name: document.getElementById("itemName").value.trim(),
         company: document.getElementById("companyName").value.trim(),
         packSize: document.getElementById("packSize").value.trim(),
+        unitSize: parseInt(document.getElementById("unitSize").value) || 1,
         variant: document.getElementById("variant").value.trim(),
         expiry: document.getElementById("expDate").value,
         rate: parseFloat(document.getElementById("rate").value) || 0,
@@ -992,6 +1028,28 @@
       closeItemModal();
     }
 
+    // DUPLICATE / COPY EXISTING ITEM
+    function duplicateItem(id) {
+      if (!requestPinAuth("duplicate this item")) return;
+      const item = state.items.find(i => i.id === id);
+      if (!item) return;
+
+      openItemModal(false);
+      document.getElementById("itemModalTitle").innerText = `Duplicate: ${item.name}`;
+      document.getElementById("editItemId").value = ""; // Blank so it creates new item
+      document.getElementById("itemName").value = `${item.name} (Copy)`;
+      document.getElementById("companyName").value = item.company;
+      document.getElementById("packSize").value = item.packSize || "";
+      document.getElementById("unitSize").value = item.unitSize || 1;
+      document.getElementById("variant").value = item.variant || "";
+      document.getElementById("expDate").value = item.expiry;
+      document.getElementById("rate").value = item.rate;
+      document.getElementById("mrp").value = item.mrp;
+      document.getElementById("currentStock").value = 1;
+      document.getElementById("supplierSelect").value = item.supplier || "";
+      calculatePerUnitPreview();
+    }
+
     function editItem(id) {
       if (!requestPinAuth("edit this item")) return;
       const item = state.items.find(i => i.id === id);
@@ -1001,12 +1059,14 @@
       document.getElementById("itemName").value = item.name;
       document.getElementById("companyName").value = item.company;
       document.getElementById("packSize").value = item.packSize || "";
+      document.getElementById("unitSize").value = item.unitSize || 1;
       document.getElementById("variant").value = item.variant || "";
       document.getElementById("expDate").value = item.expiry;
       document.getElementById("rate").value = item.rate;
       document.getElementById("mrp").value = item.mrp;
       document.getElementById("currentStock").value = item.stock;
       document.getElementById("supplierSelect").value = item.supplier || "";
+      calculatePerUnitPreview();
     }
 
     function deleteItem(id) {
@@ -1017,9 +1077,7 @@
       }
     }
 
-    // ==========================================
-    // STOCKIST ORDER REQUIREMENT SYSTEM
-    // ==========================================
+    // STOCKIST ORDER SYSTEM
     function updateOrderBadge() {
       const pendingCount = (state.orders || []).filter(o => !o.ordered).length;
       const badge = document.getElementById("pendingOrderCountBadge");
@@ -1116,7 +1174,7 @@
 
       const pendingOrders = (state.orders || []).filter(o => {
         const matchesSupplier = (filter === "ALL" || o.supplier === filter);
-        return matchesSupplier && !o.ordered; // only active pending requirements
+        return matchesSupplier && !o.ordered;
       });
 
       if (pendingOrders.length === 0) {
@@ -1148,13 +1206,12 @@
       updateOrderBadge();
     }
 
-    // INFORM KAR DIYA / ENTRY HO GAYI -> CLEAR FROM REQUIREMENTS
     function markOrderInformed(orderId) {
       const order = state.orders.find(o => o.id === orderId);
       if (!order) return;
 
       if (confirm(`Confirm: Stockist '${order.supplier}' ko '${order.itemName}' ka order inform kar diya hai?`)) {
-        order.ordered = true; // marked as ordered so it goes away from requirements
+        order.ordered = true;
         order.informedDate = new Date().toISOString().split('T')[0];
         saveToStorage();
         renderOrderList();
@@ -1202,9 +1259,7 @@
       window.open(url, '_blank');
     }
 
-    // ==========================================
     // TRANSACTIONS & PRINTING
-    // ==========================================
     function formatInvoiceNumber(seq) {
       const numStr = String(seq).padStart(2, '0');
       return `SGMK${numStr}`;
@@ -1216,11 +1271,12 @@
       document.getElementById("txnForm").reset();
       document.getElementById("txnItemId").value = item.id;
       document.getElementById("txnItemTitle").innerText = item.name;
-      document.getElementById("txnItemSubtitle").innerText = `Stock: ${item.stock} | Rate: ₹${item.rate} | MRP: ₹${item.mrp}`;
+      document.getElementById("txnItemSubtitle").innerText = `Stock: ${item.stock} pk | Rate: ₹${item.rate} | MRP: ₹${item.mrp}`;
       document.getElementById("txnSalePrice").value = item.mrp;
       document.getElementById("txnParty").value = "Retail Sale";
       
       document.getElementById("txnDate").value = new Date().toISOString().split('T')[0];
+      document.getElementById("creditNewExpiry").value = item.expiry || "";
       
       const currentSeq = state.nextInvoiceSeq || 1;
       document.getElementById("previewInvoiceNo").innerText = formatInvoiceNumber(currentSeq);
@@ -1301,6 +1357,7 @@
           itemId: item.id,
           itemName: item.name,
           packSize: item.packSize || '',
+          unitSize: item.unitSize || 1,
           variant: item.variant || '',
           expiry: item.expiry || '',
           qty: qty,
@@ -1320,12 +1377,16 @@
 
       } else {
         const creditSupplier = document.getElementById("creditSupplierSelect").value;
+        const creditExpiry = document.getElementById("creditNewExpiry").value;
         if (!creditSupplier) {
           alert("Please select or add a supplier (Kisse Aaya)!");
           return;
         }
         item.stock += qty;
         item.supplier = creditSupplier;
+        if (creditExpiry) {
+          item.expiry = creditExpiry; // update batch expiry if specified
+        }
 
         const creditTxnObj = {
           id: 'TXN_' + Date.now(),
@@ -1336,8 +1397,9 @@
           itemId: item.id,
           itemName: item.name,
           packSize: item.packSize || '',
+          unitSize: item.unitSize || 1,
           variant: item.variant || '',
-          expiry: item.expiry || '',
+          expiry: creditExpiry || item.expiry || '',
           qty: qty,
           rate: item.rate,
           salePrice: item.rate,
@@ -1348,7 +1410,7 @@
         state.transactions.unshift(creditTxnObj);
         saveToStorage();
         closeTxnModal();
-        alert(`Stock Credited! +${qty} added on ${selectedTxnDate} from supplier: ${creditSupplier}`);
+        alert(`Stock Credited! +${qty} added from ${creditSupplier} (Expiry: ${creditExpiry || item.expiry})`);
       }
     }
 
@@ -1358,7 +1420,7 @@
       document.getElementById("prnDate").innerText = t.date || new Date().toISOString().split('T')[0];
       document.getElementById("prnTime").innerText = t.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       document.getElementById("prnItemName").innerText = t.itemName;
-      document.getElementById("prnItemMeta").innerText = `Pack: ${t.packSize || '-'} | Exp: ${t.expiry || '-'}`;
+      document.getElementById("prnItemMeta").innerText = `Pack: ${t.packSize || '-'} (${t.unitSize || 1} units) | Exp: ${t.expiry || '-'}`;
       document.getElementById("prnQty").innerText = t.qty;
       document.getElementById("prnRate").innerText = `₹${Number(t.salePrice).toFixed(2)}`;
       
@@ -1478,7 +1540,10 @@
             try { decryptedData = JSON.parse(decodedRaw); } catch(err){}
           }
           if (decryptedData && decryptedData.items) {
-            state.items = decryptedData.items;
+            state.items = decryptedData.items.map(i => {
+              if (!i.unitSize) i.unitSize = 1;
+              return i;
+            });
             state.suppliers = decryptedData.suppliers || state.suppliers;
             state.transactions = decryptedData.transactions || [];
             state.orders = decryptedData.orders || [];
@@ -1578,7 +1643,12 @@
       reader.onload = function(evt) {
         try {
           const parsed = JSON.parse(evt.target.result);
-          if (parsed.items) state.items = parsed.items;
+          if (parsed.items) {
+            state.items = parsed.items.map(i => {
+              if (!i.unitSize) i.unitSize = 1;
+              return i;
+            });
+          }
           if (parsed.suppliers) state.suppliers = parsed.suppliers;
           if (parsed.transactions) state.transactions = parsed.transactions;
           if (parsed.orders) state.orders = parsed.orders;
