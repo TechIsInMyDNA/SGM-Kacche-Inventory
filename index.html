@@ -216,7 +216,7 @@
     </div>
   </main>
 
-  <!-- ADD / EDIT MASTER ITEM MODAL -->
+  <!-- ADD / EDIT / DUPLICATE MASTER ITEM MODAL -->
   <div id="itemModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden items-center justify-center p-4">
     <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-slate-800 pb-3">
@@ -619,7 +619,6 @@
               <div>
                 <label class="text-[10px] text-slate-400">Return to Supplier *</label>
                 <select id="expirySupplierTarget" class="w-full mt-1 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-white">
-                  <!-- Synced with batch supplier -->
                 </select>
               </div>
               <div>
@@ -823,7 +822,7 @@
       suppliers: ["Direct Cash", "Wholesale Dist", "Agency Gondia"],
       transactions: [],
       orders: [],
-      expiryDebitNotes: [], // Expiry returns to suppliers
+      expiryDebitNotes: [],
       nextInvoiceSeq: 1,
       nextDebitNoteSeq: 1
     };
@@ -1167,7 +1166,6 @@
         });
       });
 
-      // Calculate pending expiry claims sum
       const pendingClaimsSum = (state.expiryDebitNotes || [])
         .filter(d => d.status !== 'SETTLED')
         .reduce((sum, d) => sum + (Number(d.mrpTotal) || 0), 0);
@@ -1242,6 +1240,9 @@
             <button onclick="openTxnModal('${item.id}')" title="Debit / Credit / Expiry Note" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700">
               <i class="fa-solid fa-right-left text-xs"></i>
             </button>
+            <button onclick="duplicateMasterItem('${item.id}')" title="Duplicate Master Item" class="px-2 py-1 bg-slate-800 hover:bg-indigo-900/60 text-indigo-300 rounded border border-slate-700 text-xs">
+              <i class="fa-solid fa-copy"></i>
+            </button>
             <button onclick="editItem('${item.id}')" title="Edit Master (PIN Protected)" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700">
               <i class="fa-solid fa-pencil text-xs"></i>
             </button>
@@ -1267,6 +1268,27 @@
     function closeItemModal() {
       document.getElementById("itemModal").classList.add("hidden");
       document.getElementById("itemModal").classList.remove("flex");
+    }
+
+    // DUPLICATE MASTER ITEM ACTION
+    function duplicateMasterItem(id) {
+      const item = state.items.find(i => i.id === id);
+      if (!item) return;
+
+      openItemModal(false);
+      document.getElementById("itemModalTitle").innerText = `Duplicate Master: ${item.name}`;
+      document.getElementById("editItemId").value = ""; // Clean ID to create new
+      document.getElementById("itemName").value = `${item.name} (Copy)`;
+      document.getElementById("companyName").value = item.company || "";
+      document.getElementById("packSize").value = item.packSize || "";
+      document.getElementById("unitSize").value = item.unitSize || 10;
+      document.getElementById("variant").value = item.variant || "General";
+      document.getElementById("expDate").value = item.expiry || (item.batches && item.batches[0] ? item.batches[0].expiry : "");
+      document.getElementById("rate").value = item.rate || 0;
+      document.getElementById("mrp").value = item.mrp || 0;
+      document.getElementById("currentStock").value = 1;
+      document.getElementById("supplierSelect").value = item.supplier || "";
+      calculatePerUnitPreview();
     }
 
     function saveItem(e) {
@@ -1676,7 +1698,6 @@
       } else if (txnType === "EXPIRY_DEBIT") {
         const packMrp = opt && opt.dataset.mrp ? parseFloat(opt.dataset.mrp) : item.mrp;
         document.getElementById("txnSalePrice").value = mode === "UNIT" ? (packMrp / uSize).toFixed(2) : packMrp.toFixed(2);
-        // Sync supplier
         if (opt && opt.dataset.supplier) {
           document.getElementById("expirySupplierTarget").value = opt.dataset.supplier;
         }
@@ -1822,7 +1843,6 @@
         }
 
       } else if (type === "EXPIRY_DEBIT") {
-        // EXPIRY DEBIT NOTE ACTION (DEDUCT STOCK & CREATE SUPPLIER CLAIM)
         const batchSelect = document.getElementById("debitBatchSelect");
         const selectedBatchId = batchSelect.value;
         const batchObj = (item.batches || []).find(b => b.batchId === selectedBatchId);
@@ -1843,7 +1863,6 @@
         const targetSupplier = document.getElementById("expirySupplierTarget").value || batchObj.supplier || item.supplier || "Supplier";
         const dispatchDate = document.getElementById("expiryDispatchDate").value || "";
 
-        // Deduct from batch
         batchObj.stock = parseFloat((batchObj.stock - packQtyEquivalent).toFixed(4));
         item.stock = getItemTotalStock(item);
 
@@ -1880,7 +1899,6 @@
         state.expiryDebitNotes = state.expiryDebitNotes || [];
         state.expiryDebitNotes.unshift(debitNoteObj);
 
-        // Also add to global transaction history for complete ledger transparency
         state.transactions.unshift({
           id: 'TXN_' + Date.now(),
           type: 'EXPIRY_DEBIT',
@@ -1910,7 +1928,6 @@
         }
 
       } else {
-        // CREDIT ACTION
         const creditSupplier = document.getElementById("creditSupplierSelect").value;
         const creditExpiry = document.getElementById("creditNewExpiry").value || item.expiry || '';
         
