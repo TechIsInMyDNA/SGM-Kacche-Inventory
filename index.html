@@ -119,7 +119,7 @@
           <h1 class="text-xl sm:text-2xl font-black tracking-tight text-emerald-800">
             SGM Kacche Inventory
           </h1>
-          <p class="text-xs sm:text-sm font-semibold text-slate-500">Keyboard Powered Multi-Expiry Ledger (AES-256)</p>
+          <p class="text-xs sm:text-sm font-semibold text-slate-500">Auto-Sequential Invoices &amp; Ledger (AES-256)</p>
         </div>
       </div>
 
@@ -184,7 +184,7 @@
         <span><span class="key-badge">Ctrl+Enter</span> Save/Confirm</span>
         <span><span class="key-badge">Esc</span> Close Popup</span>
       </div>
-      <span class="text-emerald-800 font-extrabold hidden md:inline">⚡ Hover on buttons to view shortcuts</span>
+      <span class="text-emerald-800 font-extrabold hidden md:inline">⚡ Invoices Auto-Fill First Available Gap</span>
     </div>
   </div>
 
@@ -814,7 +814,7 @@
     </div>
   </div>
 
-  <!-- PIN PROFIT & INVOICE HISTORY MODAL (WITH BILL EDIT & DELETE) -->
+  <!-- PIN PROFIT & INVOICE HISTORY MODAL -->
   <div id="profitModal" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center p-3 sm:p-4">
     <div class="bg-white border border-slate-300 rounded-3xl max-w-5xl w-full p-5 sm:p-7 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-slate-200 pb-3">
@@ -959,10 +959,42 @@
       suppliers: ["Direct Cash", "Wholesale Dist", "Agency Gondia"],
       transactions: [],
       orders: [],
-      expiryDebitNotes: [],
-      nextInvoiceSeq: 1,
-      nextDebitNoteSeq: 1
+      expiryDebitNotes: []
     };
+
+    // DYNAMIC CONTINUOUS SEQUENTIAL NUMBER GENERATOR
+    function getNextAvailableInvoiceNumber() {
+      const existingSeqs = new Set();
+      (state.transactions || []).forEach(t => {
+        if (t.type === 'DEBIT' && t.invNo && t.invNo.startsWith('SGMK')) {
+          const num = parseInt(t.invNo.replace('SGMK', ''), 10);
+          if (!isNaN(num)) existingSeqs.add(num);
+        }
+      });
+
+      // Find the first available natural sequential integer (1, 2, 3...)
+      let seq = 1;
+      while (existingSeqs.has(seq)) {
+        seq++;
+      }
+      return `SGMK${String(seq).padStart(2, '0')}`;
+    }
+
+    function getNextAvailableDebitNoteNumber() {
+      const existingSeqs = new Set();
+      (state.expiryDebitNotes || []).forEach(d => {
+        if (d.debitNoteNo && d.debitNoteNo.startsWith('DN-EXP')) {
+          const num = parseInt(d.debitNoteNo.replace('DN-EXP', ''), 10);
+          if (!isNaN(num)) existingSeqs.add(num);
+        }
+      });
+
+      let seq = 1;
+      while (existingSeqs.has(seq)) {
+        seq++;
+      }
+      return `DN-EXP${String(seq).padStart(2, '0')}`;
+    }
 
     let currentSelectedRowIndex = 0;
     let filteredItemsList = [];
@@ -1140,9 +1172,7 @@
         suppliers: state.suppliers,
         transactions: state.transactions,
         orders: state.orders || [],
-        expiryDebitNotes: state.expiryDebitNotes || [],
-        nextInvoiceSeq: state.nextInvoiceSeq || 1,
-        nextDebitNoteSeq: state.nextDebitNoteSeq || 1
+        expiryDebitNotes: state.expiryDebitNotes || []
       }));
       renderCompanyDropdown();
       renderTable();
@@ -1161,8 +1191,6 @@
           state.transactions = parsed.transactions || [];
           state.orders = parsed.orders || [];
           state.expiryDebitNotes = parsed.expiryDebitNotes || [];
-          state.nextInvoiceSeq = parsed.nextInvoiceSeq || (state.transactions.length + 1);
-          state.nextDebitNoteSeq = parsed.nextDebitNoteSeq || (state.expiryDebitNotes.length + 1);
         } catch(e) { console.error(e); }
       }
     }
@@ -1528,6 +1556,22 @@
       });
     }
 
+    function openItemModal(isEdit = false) {
+      document.getElementById("itemForm").reset();
+      document.getElementById("editItemId").value = "";
+      document.getElementById("unitSize").value = "10";
+      document.getElementById("itemModalTitle").innerText = isEdit ? "Edit Master Item" : "Add New Master Item";
+      calculatePerUnitPreview();
+      document.getElementById("itemModal").classList.remove("hidden");
+      document.getElementById("itemModal").classList.add("flex");
+      setTimeout(() => document.getElementById("itemName").focus(), 50);
+    }
+
+    function closeItemModal() {
+      document.getElementById("itemModal").classList.add("hidden");
+      document.getElementById("itemModal").classList.remove("flex");
+    }
+
     function duplicateMasterItem(id) {
       const item = state.items.find(i => i.id === id);
       if (!item) return;
@@ -1718,11 +1762,6 @@
       if (badge) badge.innerText = pendingCount;
     }
 
-    function formatDebitNoteNumber(seq) {
-      const numStr = String(seq).padStart(2, '0');
-      return `DN-EXP${numStr}`;
-    }
-
     function openExpiryDebitNotesModal() {
       renderExpiryDebitNotesList();
       document.getElementById("expiryDebitNotesModal").classList.remove("hidden");
@@ -1863,13 +1902,8 @@
     }
 
     // ==========================================
-    // TRANSACTION LOGIC (DEBIT / CREDIT / EXPIRY)
+    // TRANSACTION LOGIC
     // ==========================================
-    function formatInvoiceNumber(seq) {
-      const numStr = String(seq).padStart(2, '0');
-      return `SGMK${numStr}`;
-    }
-
     function openTxnModal(itemId) {
       const item = state.items.find(i => i.id === itemId);
       if (!item) return;
@@ -1914,8 +1948,8 @@
 
       onQtyModeChanged();
 
-      const currentSeq = state.nextInvoiceSeq || 1;
-      document.getElementById("previewInvoiceNo").innerText = formatInvoiceNumber(currentSeq);
+      // Dynamic automatic sequential invoice number
+      document.getElementById("previewInvoiceNo").innerText = getNextAvailableInvoiceNumber();
 
       if (totPacks <= 0) {
         document.getElementById("typeCreditRadio").checked = true;
@@ -2005,7 +2039,7 @@
         document.getElementById("retailPartyField").style.display = "none";
         document.getElementById("expiryReturnDetailsField").style.display = "block";
         document.getElementById("invNoTypeLabel").innerText = "Generated Debit Note #:";
-        document.getElementById("previewInvoiceNo").innerText = formatDebitNoteNumber(state.nextDebitNoteSeq || 1);
+        document.getElementById("previewInvoiceNo").innerText = getNextAvailableDebitNoteNumber();
         document.getElementById("batchSelectLabel").innerText = "Select Expired Batch to Return *";
       } else if (txnType === "DEBIT") {
         document.getElementById("debitFields").style.display = "block";
@@ -2013,7 +2047,7 @@
         document.getElementById("retailPartyField").style.display = "block";
         document.getElementById("expiryReturnDetailsField").style.display = "none";
         document.getElementById("invNoTypeLabel").innerText = "Generated Inv No:";
-        document.getElementById("previewInvoiceNo").innerText = formatInvoiceNumber(state.nextInvoiceSeq || 1);
+        document.getElementById("previewInvoiceNo").innerText = getNextAvailableInvoiceNumber();
         document.getElementById("batchSelectLabel").innerText = "Select Expiry Batch to Bill From *";
       } else {
         document.getElementById("debitFields").style.display = "none";
@@ -2066,9 +2100,8 @@
         batchObj.stock = parseFloat((batchObj.stock - packQtyEquivalent).toFixed(4));
         item.stock = getItemTotalStock(item);
 
-        const seq = state.nextInvoiceSeq || 1;
-        const invNo = formatInvoiceNumber(seq);
-        state.nextInvoiceSeq = seq + 1;
+        // Continuous Sequential Number
+        const invNo = getNextAvailableInvoiceNumber();
 
         const txnObj = {
           id: 'TXN_' + Date.now(),
@@ -2124,9 +2157,7 @@
         batchObj.stock = parseFloat((batchObj.stock - packQtyEquivalent).toFixed(4));
         item.stock = getItemTotalStock(item);
 
-        const dnSeq = state.nextDebitNoteSeq || 1;
-        const debitNoteNo = formatDebitNoteNumber(dnSeq);
-        state.nextDebitNoteSeq = dnSeq + 1;
+        const debitNoteNo = getNextAvailableDebitNoteNumber();
 
         const mrpRate = batchObj.mrp || item.mrp;
         const purRate = batchObj.rate || item.rate;
@@ -2304,13 +2335,11 @@
       const uSize = Number(txn.unitSize || (item ? item.unitSize : 1)) || 1;
       const qtyMode = txn.qtyMode || 'PACK';
 
-      // Convert differences in terms of packs
       const oldPackEquivalent = (qtyMode === "UNIT") ? (txn.qty / uSize) : txn.qty;
       const newPackEquivalent = (qtyMode === "UNIT") ? (newQty / uSize) : newQty;
-      const packDiff = (newPackEquivalent - oldPackEquivalent); // Positive means more sold, negative means returned to stock
+      const packDiff = (newPackEquivalent - oldPackEquivalent);
 
       if (item) {
-        // Find batch to adjust
         let targetBatch = null;
         if (txn.batchId) {
           targetBatch = (item.batches || []).find(b => b.batchId === txn.batchId);
@@ -2332,7 +2361,6 @@
         }
       }
 
-      // Update Txn details
       const totalSalesAmount = (newQty * newPrice);
       const costPerUnitOrPack = txn.rate || ((item ? item.rate : 0) / (qtyMode === 'UNIT' ? uSize : 1));
       const totalCostAmount = (newQty * costPerUnitOrPack);
@@ -2380,10 +2408,8 @@
           }
         }
 
-        // Remove from transactions
         state.transactions = state.transactions.filter(t => t.id !== txnId);
 
-        // If it was an expiry debit note, also remove from expiry notes
         if (txn.type === 'EXPIRY_DEBIT') {
           state.expiryDebitNotes = (state.expiryDebitNotes || []).filter(d => d.debitNoteNo !== txn.invNo);
           updateDebitNotesBadge();
@@ -2392,7 +2418,7 @@
         saveToStorage();
         renderProfitDashboard();
         renderTable();
-        alert(`Invoice ${txn.invNo} deleted and stock restored successfully!`);
+        alert(`Invoice ${txn.invNo} deleted and stock restored successfully! Agla bill automatic sequentially fill hoga.`);
       }
     }
 
@@ -2754,8 +2780,6 @@
             state.transactions = decryptedData.transactions || [];
             state.orders = decryptedData.orders || [];
             state.expiryDebitNotes = decryptedData.expiryDebitNotes || [];
-            state.nextInvoiceSeq = decryptedData.nextInvoiceSeq || (state.transactions.length + 1);
-            state.nextDebitNoteSeq = decryptedData.nextDebitNoteSeq || (state.expiryDebitNotes.length + 1);
             saveToStorage();
             renderSuppliers();
             renderCompanyDropdown();
@@ -2796,8 +2820,6 @@
           transactions: state.transactions,
           orders: state.orders || [],
           expiryDebitNotes: state.expiryDebitNotes || [],
-          nextInvoiceSeq: state.nextInvoiceSeq || 1,
-          nextDebitNoteSeq: state.nextDebitNoteSeq || 1,
           lastSync: new Date().toISOString()
         });
 
@@ -2861,8 +2883,6 @@
           if (parsed.transactions) state.transactions = parsed.transactions;
           if (parsed.orders) state.orders = parsed.orders;
           if (parsed.expiryDebitNotes) state.expiryDebitNotes = parsed.expiryDebitNotes;
-          if (parsed.nextInvoiceSeq) state.nextInvoiceSeq = parsed.nextInvoiceSeq;
-          if (parsed.nextDebitNoteSeq) state.nextDebitNoteSeq = parsed.nextDebitNoteSeq;
           saveToStorage();
           renderSuppliers();
           renderCompanyDropdown();
