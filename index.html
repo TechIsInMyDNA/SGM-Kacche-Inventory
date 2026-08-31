@@ -27,6 +27,64 @@
     ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
+    .selected-row {
+      background-color: #ecfdf5 !important;
+      border-left: 5px solid #047857 !important;
+    }
+
+    .key-badge {
+      background: #e2e8f0;
+      color: #1e293b;
+      font-family: monospace;
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid #cbd5e1;
+      font-size: 11px;
+      font-weight: 800;
+      display: inline-flex;
+      align-items: center;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    /* Custom Stylish Tooltip */
+    .has-tooltip {
+      position: relative;
+    }
+    .has-tooltip .tooltip-box {
+      visibility: hidden;
+      opacity: 0;
+      position: absolute;
+      bottom: 125%;
+      left: 50%;
+      transform: translateX(-50%);
+      background-color: #0f172a;
+      color: #f8fafc;
+      text-align: center;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+      z-index: 60;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+      transition: opacity 0.15s ease-in-out, visibility 0.15s ease-in-out;
+      pointer-events: none;
+    }
+    .has-tooltip .tooltip-box::after {
+      content: "";
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      margin-left: -5px;
+      border-width: 5px;
+      border-style: solid;
+      border-color: #0f172a transparent transparent transparent;
+    }
+    .has-tooltip:hover .tooltip-box {
+      visibility: visible;
+      opacity: 1;
+    }
+
     @media print {
       body * { visibility: hidden; }
       #printableInvoice, #printableInvoice * { visibility: visible; }
@@ -62,40 +120,76 @@
           <h1 class="text-xl sm:text-2xl font-black tracking-tight text-emerald-800">
             SGM Kacche Inventory
           </h1>
-          <p class="text-xs sm:text-sm font-semibold text-slate-500">Multi-Expiry &amp; Claims Ledger (AES-256)</p>
+          <p class="text-xs sm:text-sm font-semibold text-slate-500">Keyboard Powered Multi-Expiry Ledger (AES-256)</p>
         </div>
       </div>
 
       <div class="flex items-center gap-2 flex-wrap">
         <!-- EXPIRY DEBIT NOTES BUTTON -->
-        <button onclick="openExpiryDebitNotesModal()" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 shadow">
-          <i class="fa-solid fa-file-invoice text-rose-100"></i> Expiry Notes (<span id="pendingDebitNotesBadge">0</span>)
-        </button>
+        <div class="has-tooltip">
+          <button onclick="openExpiryDebitNotesModal()" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 shadow">
+            <i class="fa-solid fa-file-invoice text-rose-100"></i> Expiry Notes (<span id="pendingDebitNotesBadge">0</span>)
+          </button>
+          <span class="tooltip-box">Shortcut: Press <b>F7</b></span>
+        </div>
 
         <!-- STOCKIST ORDERS BUTTON -->
-        <button onclick="openOrderRequirementsModal()" class="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 shadow">
-          <i class="fa-solid fa-clipboard-list text-amber-100"></i> Orders (<span id="pendingOrderCountBadge">0</span>)
-        </button>
+        <div class="has-tooltip">
+          <button onclick="openOrderRequirementsModal()" class="px-3.5 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 shadow">
+            <i class="fa-solid fa-clipboard-list text-amber-100"></i> Orders (<span id="pendingOrderCountBadge">0</span>)
+          </button>
+          <span class="tooltip-box">Shortcut: Press <b>F4</b></span>
+        </div>
 
         <!-- PIN APP BUTTON -->
-        <button onclick="handleInstallClick()" class="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs sm:text-sm font-bold border border-slate-300 transition flex items-center gap-1.5 shadow-sm">
-          <i class="fa-solid fa-desktop text-emerald-700"></i> Pin App
-        </button>
+        <div class="has-tooltip">
+          <button onclick="handleInstallClick()" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs sm:text-sm font-bold border border-slate-300 transition flex items-center gap-1.5 shadow-sm">
+            <i class="fa-solid fa-desktop text-emerald-700"></i> Pin App
+          </button>
+          <span class="tooltip-box">Install Windows 7 / Chrome App</span>
+        </div>
 
         <button onclick="openSupplierManageModal()" class="px-3.5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-xl text-xs sm:text-sm font-bold border border-slate-300 transition flex items-center gap-1.5 shadow-sm">
           <i class="fa-solid fa-truck-field text-emerald-700"></i> Suppliers
         </button>
-        <button onclick="syncWithGitHub()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs sm:text-sm font-black transition flex items-center gap-1.5 shadow-md shadow-emerald-900/20">
-          <i class="fa-solid fa-cloud-arrow-up" id="syncIcon"></i> <span id="syncText">Sync</span>
-        </button>
-        <button onclick="openProfitModal()" class="px-3.5 py-2 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 shadow-md shadow-indigo-900/20">
-          <i class="fa-solid fa-lock"></i> History / P&amp;L
-        </button>
+
+        <!-- SYNC BUTTON -->
+        <div class="has-tooltip">
+          <button onclick="syncWithGitHub()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs sm:text-sm font-black transition flex items-center gap-1.5 shadow-md shadow-emerald-900/20">
+            <i class="fa-solid fa-cloud-arrow-up" id="syncIcon"></i> <span id="syncText">Sync</span>
+          </button>
+          <span class="tooltip-box">Cloud Sync: Press <b>F9</b></span>
+        </div>
+
+        <!-- P&L BUTTON -->
+        <div class="has-tooltip">
+          <button onclick="openProfitModal()" class="px-3.5 py-2 bg-indigo-700 hover:bg-indigo-800 text-white rounded-xl text-xs sm:text-sm font-bold transition flex items-center gap-1.5 shadow-md shadow-indigo-900/20">
+            <i class="fa-solid fa-lock"></i> History / P&amp;L
+          </button>
+          <span class="tooltip-box">P&amp;L Panel: Press <b>F8</b></span>
+        </div>
       </div>
     </div>
   </header>
 
-  <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-5 space-y-5">
+  <!-- KEYBOARD SHORTCUT HELPER BANNER -->
+  <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-3">
+    <div class="bg-white border border-slate-300 rounded-xl p-2 px-3 flex flex-wrap items-center justify-between gap-2 text-xs font-bold text-slate-700 shadow-sm">
+      <div class="flex items-center gap-3 flex-wrap">
+        <span><span class="key-badge">/</span> or <span class="key-badge">F2</span> Search</span>
+        <span><span class="key-badge">F3</span> New Master Item</span>
+        <span><span class="key-badge">↑ / ↓</span> Select Table Row</span>
+        <span><span class="key-badge">Ctrl+D</span> Debit / Credit</span>
+        <span><span class="key-badge">Ctrl+L</span> Batch Ledger</span>
+        <span><span class="key-badge">Ctrl+E</span> Edit Master</span>
+        <span><span class="key-badge">Ctrl+Enter</span> Save/Confirm</span>
+        <span><span class="key-badge">Esc</span> Close Popup</span>
+      </div>
+      <span class="text-emerald-800 font-extrabold hidden md:inline">⚡ Hover on buttons to view shortcuts</span>
+    </div>
+  </div>
+
+  <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mt-4 space-y-4">
 
     <!-- SUMMARY CARDS -->
     <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
@@ -112,9 +206,12 @@
         <div class="text-2xl sm:text-3xl font-black text-rose-600 mt-1" id="statPendingExpiryClaims">₹0</div>
       </div>
       <div class="bg-white p-4 rounded-2xl border border-slate-300 shadow-sm flex flex-col justify-center gap-2">
-        <button onclick="openItemModal()" class="w-full py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-black text-xs sm:text-sm uppercase tracking-wider transition shadow-sm">
-          + Add Master Item
-        </button>
+        <div class="has-tooltip w-full">
+          <button onclick="openItemModal()" class="w-full py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-black text-xs sm:text-sm uppercase tracking-wider transition shadow-sm flex items-center justify-center gap-2">
+            <span>+ Add Master Item</span>
+          </button>
+          <span class="tooltip-box">Shortcut: Press <b>F3</b></span>
+        </div>
         <div class="flex gap-2">
           <button onclick="exportLocalJson()" class="flex-1 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs sm:text-sm font-bold rounded-lg border border-slate-300 text-center">
             Backup
@@ -129,17 +226,18 @@
     <!-- FILTER & SEARCH PANEL -->
     <div class="bg-white rounded-2xl border border-slate-300 shadow-sm overflow-hidden">
       <div class="p-4 border-b border-slate-200 space-y-3">
-        <div class="relative w-full">
+        <div class="relative w-full has-tooltip">
           <i class="fa-solid fa-search absolute left-4 top-3.5 text-slate-400 text-base"></i>
           <input type="text" id="searchInput" oninput="renderTable()" placeholder="Search Item, Company, Packing, Variant, Supplier, Expiry..." 
-            class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl pl-11 pr-10 py-2.5 text-sm sm:text-base font-semibold text-slate-900 focus:outline-none focus:border-emerald-600 placeholder-slate-400 shadow-inner">
-          <button onclick="document.getElementById('searchInput').value=''; renderTable();" class="absolute right-4 top-3 text-slate-400 hover:text-slate-700 text-base">
+            class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl pl-11 pr-12 py-2.5 text-sm sm:text-base font-semibold text-slate-900 focus:outline-none focus:border-emerald-600 placeholder-slate-400 shadow-inner">
+          <span class="absolute right-9 top-3 key-badge text-slate-400 hidden sm:inline">/</span>
+          <button onclick="document.getElementById('searchInput').value=''; renderTable();" class="absolute right-3 top-3 text-slate-400 hover:text-slate-700 text-base">
             <i class="fa-solid fa-times"></i>
           </button>
+          <span class="tooltip-box">Search Shortcut: Press <b>/</b> or <b>F2</b></span>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-5 gap-2.5 pt-1">
-          <!-- Company Filter -->
           <div>
             <label class="text-xs uppercase font-extrabold text-slate-600 block mb-1">Company</label>
             <select id="filterCompany" onchange="renderTable()" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:border-emerald-600">
@@ -147,7 +245,6 @@
             </select>
           </div>
 
-          <!-- Supplier Filter -->
           <div>
             <label class="text-xs uppercase font-extrabold text-slate-600 block mb-1">Supplier</label>
             <select id="filterSupplier" onchange="renderTable()" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:border-emerald-600">
@@ -155,7 +252,6 @@
             </select>
           </div>
 
-          <!-- Expiry Status Filter -->
           <div>
             <label class="text-xs uppercase font-extrabold text-slate-600 block mb-1">Expiry Status</label>
             <select id="filterExpiry" onchange="renderTable()" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:border-emerald-600">
@@ -167,7 +263,6 @@
             </select>
           </div>
 
-          <!-- MRP Range Filter -->
           <div>
             <label class="text-xs uppercase font-extrabold text-slate-600 block mb-1">MRP Range</label>
             <select id="filterMrp" onchange="renderTable()" class="w-full bg-slate-50 border-2 border-slate-300 rounded-xl px-3 py-2 text-xs sm:text-sm font-bold text-slate-800 focus:outline-none focus:border-emerald-600">
@@ -189,7 +284,7 @@
 
       <!-- INVENTORY TABLE -->
       <div class="overflow-x-auto">
-        <table class="w-full text-left text-xs sm:text-sm border-collapse">
+        <table class="w-full text-left text-xs sm:text-sm border-collapse" id="mainInventoryTable">
           <thead>
             <tr class="bg-slate-100 border-b border-slate-300 text-slate-700 font-extrabold uppercase tracking-wider">
               <th class="p-3.5">Item &amp; Variant</th>
@@ -212,7 +307,7 @@
     <div class="bg-white border border-slate-300 rounded-3xl max-w-xl w-full p-5 sm:p-7 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
       <div class="flex justify-between items-center border-b border-slate-200 pb-3">
         <h3 class="font-black text-lg sm:text-xl text-slate-900" id="itemModalTitle">Add New Master Item</h3>
-        <button onclick="closeItemModal()" class="text-slate-400 hover:text-slate-800 text-xl"><i class="fa-solid fa-xmark"></i></button>
+        <button onclick="closeItemModal()" title="Close (Esc)" class="text-slate-400 hover:text-slate-800 text-xl"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <form id="itemForm" onsubmit="saveItem(event)" class="space-y-3.5 text-slate-800">
@@ -283,8 +378,10 @@
         </div>
 
         <div class="flex justify-end gap-2.5 pt-4 border-t border-slate-200">
-          <button type="button" onclick="closeItemModal()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-800">Cancel</button>
-          <button type="submit" class="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 rounded-xl text-xs sm:text-sm font-black text-white shadow-md">Save Master Item</button>
+          <button type="button" onclick="closeItemModal()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-800">Cancel (Esc)</button>
+          <button type="submit" class="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 rounded-xl text-xs sm:text-sm font-black text-white shadow-md flex items-center gap-1.5">
+            <span>Save Master Item</span> <span class="key-badge" style="background:#065f46;color:#fff;">Ctrl+Enter</span>
+          </button>
         </div>
       </form>
     </div>
@@ -300,7 +397,7 @@
           </h3>
           <p class="text-xs sm:text-sm font-semibold text-slate-600" id="ledgerModalSubtitle"></p>
         </div>
-        <button onclick="closeItemLedgerModal()" class="text-slate-400 hover:text-slate-800 text-xl"><i class="fa-solid fa-xmark"></i></button>
+        <button onclick="closeItemLedgerModal()" title="Close (Esc)" class="text-slate-400 hover:text-slate-800 text-xl"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <!-- ACTIVE BATCHES BREAKDOWN -->
@@ -351,7 +448,7 @@
       </div>
 
       <div class="flex justify-end pt-2">
-        <button onclick="closeItemLedgerModal()" class="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs sm:text-sm font-bold rounded-xl">Close Ledger</button>
+        <button onclick="closeItemLedgerModal()" class="px-5 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs sm:text-sm font-bold rounded-xl">Close (Esc)</button>
       </div>
     </div>
   </div>
@@ -366,7 +463,7 @@
           </h3>
           <p class="text-xs sm:text-sm font-semibold text-slate-600">Track expired returns sent to suppliers, dispatch dates &amp; claim settlement adjustments</p>
         </div>
-        <button onclick="closeExpiryDebitNotesModal()" class="text-slate-400 hover:text-slate-800 text-xl"><i class="fa-solid fa-xmark"></i></button>
+        <button onclick="closeExpiryDebitNotesModal()" title="Close (Esc)" class="text-slate-400 hover:text-slate-800 text-xl"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <!-- FILTER AND SEARCH -->
@@ -418,7 +515,7 @@
           </h3>
           <p class="text-xs sm:text-sm font-semibold text-slate-600">Manage pending orders to be placed with stockists / distributors</p>
         </div>
-        <button onclick="closeOrderRequirementsModal()" class="text-slate-400 hover:text-slate-800 text-xl"><i class="fa-solid fa-xmark"></i></button>
+        <button onclick="closeOrderRequirementsModal()" title="Close (Esc)" class="text-slate-400 hover:text-slate-800 text-xl"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <div class="bg-amber-50 p-4 rounded-2xl border border-amber-200 space-y-3">
@@ -535,7 +632,7 @@
           <h3 class="font-black text-lg sm:text-xl text-slate-900" id="txnItemTitle">Stock Update</h3>
           <p class="text-xs sm:text-sm font-semibold text-slate-600" id="txnItemSubtitle"></p>
         </div>
-        <button onclick="closeTxnModal()" class="text-slate-400 hover:text-slate-800 text-xl"><i class="fa-solid fa-xmark"></i></button>
+        <button onclick="closeTxnModal()" title="Close (Esc)" class="text-slate-400 hover:text-slate-800 text-xl"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <form id="txnForm" onsubmit="saveStockTransaction(event)" class="space-y-3.5 text-slate-800">
@@ -661,8 +758,10 @@
         </div>
 
         <div class="flex justify-end gap-2.5 pt-4 border-t border-slate-200">
-          <button type="button" onclick="closeTxnModal()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-800">Cancel</button>
-          <button type="submit" class="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 rounded-xl text-xs sm:text-sm font-black text-white shadow-md">Confirm</button>
+          <button type="button" onclick="closeTxnModal()" class="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 rounded-xl text-xs sm:text-sm font-bold text-slate-800">Cancel (Esc)</button>
+          <button type="submit" class="px-6 py-2.5 bg-emerald-700 hover:bg-emerald-800 rounded-xl text-xs sm:text-sm font-black text-white shadow-md flex items-center gap-1.5">
+            <span>Confirm</span> <span class="key-badge" style="background:#065f46;color:#fff;">Ctrl+Enter</span>
+          </button>
         </div>
       </form>
     </div>
@@ -676,7 +775,7 @@
           <i class="fa-solid fa-chart-line text-indigo-700 text-xl"></i>
           <h3 class="font-black text-lg sm:text-xl text-slate-900">Stock Logs &amp; Profit Dashboard</h3>
         </div>
-        <button onclick="closeProfitModal()" class="text-slate-400 hover:text-slate-800 text-xl"><i class="fa-solid fa-xmark"></i></button>
+        <button onclick="closeProfitModal()" title="Close (Esc)" class="text-slate-400 hover:text-slate-800 text-xl"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <div id="pinContainer" class="py-8 flex flex-col items-center justify-center space-y-4">
@@ -748,8 +847,8 @@
           <div><strong id="prnPartyLabel">Customer:</strong> <span id="prnCustomer">Retail Cash</span></div>
         </div>
         <div style="text-align: right;">
-          <div><strong>Date:</strong> <span id="prnDate">2026-08-30</span></div>
-          <div><strong>Time:</strong> <span id="prnTime">10:30 PM</span></div>
+          <div><strong>Date:</strong> <span id="prnDate">2026-08-31</span></div>
+          <div><strong>Time:</strong> <span id="prnTime">10:02 AM</span></div>
         </div>
       </div>
 
@@ -762,7 +861,7 @@
             <th style="text-align: right; padding: 4px 2px;">Total</th>
           </tr>
         </thead>
-        <tbody style="border-bottom: 1.5px solid #000;">
+        <tbody style="border-bottom: 1px solid #000;">
           <tr>
             <td style="padding: 6px 2px;">
               <div id="prnItemName" style="font-weight: bold; font-size: 11px;">Paracetamol 650</div>
@@ -817,6 +916,119 @@
       nextInvoiceSeq: 1,
       nextDebitNoteSeq: 1
     };
+
+    let currentSelectedRowIndex = 0;
+    let filteredItemsList = [];
+
+    // KEYBOARD SHORTCUTS MANAGER
+    window.addEventListener("keydown", (e) => {
+      const activeElement = document.activeElement;
+      const isInput = activeElement && (activeElement.tagName === "INPUT" || activeElement.tagName === "SELECT" || activeElement.tagName === "TEXTAREA");
+
+      // ESC: Close open modal
+      if (e.key === "Escape") {
+        closeAllModals();
+        return;
+      }
+
+      // Ctrl + Enter: Submit current form
+      if (e.ctrlKey && e.key === "Enter") {
+        if (!document.getElementById("itemModal").classList.contains("hidden")) {
+          document.getElementById("itemForm").requestSubmit();
+        } else if (!document.getElementById("txnModal").classList.contains("hidden")) {
+          document.getElementById("txnForm").requestSubmit();
+        }
+        return;
+      }
+
+      // Function keys
+      if (e.key === "F2" || (!isInput && e.key === "/")) {
+        e.preventDefault();
+        const s = document.getElementById("searchInput");
+        if (s) { s.focus(); s.select(); }
+        return;
+      }
+      if (e.key === "F3") {
+        e.preventDefault();
+        openItemModal();
+        return;
+      }
+      if (e.key === "F4") {
+        e.preventDefault();
+        openOrderRequirementsModal();
+        return;
+      }
+      if (e.key === "F7") {
+        e.preventDefault();
+        openExpiryDebitNotesModal();
+        return;
+      }
+      if (e.key === "F8") {
+        e.preventDefault();
+        openProfitModal();
+        return;
+      }
+      if (e.key === "F9") {
+        e.preventDefault();
+        syncWithGitHub();
+        return;
+      }
+
+      // Table Navigation with Arrow Keys
+      if (!isInput && filteredItemsList.length > 0) {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          if (currentSelectedRowIndex < filteredItemsList.length - 1) {
+            currentSelectedRowIndex++;
+            highlightSelectedRow();
+          }
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          if (currentSelectedRowIndex > 0) {
+            currentSelectedRowIndex--;
+            highlightSelectedRow();
+          }
+        } else if (e.ctrlKey && e.key.toLowerCase() === "d") {
+          e.preventDefault();
+          if (filteredItemsList[currentSelectedRowIndex]) {
+            openTxnModal(filteredItemsList[currentSelectedRowIndex].id);
+          }
+        } else if (e.ctrlKey && e.key.toLowerCase() === "l") {
+          e.preventDefault();
+          if (filteredItemsList[currentSelectedRowIndex]) {
+            openItemLedgerModal(filteredItemsList[currentSelectedRowIndex].id);
+          }
+        } else if (e.ctrlKey && e.key.toLowerCase() === "e") {
+          e.preventDefault();
+          if (filteredItemsList[currentSelectedRowIndex]) {
+            editItem(filteredItemsList[currentSelectedRowIndex].id);
+          }
+        }
+      }
+    });
+
+    function closeAllModals() {
+      closeItemModal();
+      closeItemLedgerModal();
+      closeExpiryDebitNotesModal();
+      closeOrderRequirementsModal();
+      closeSupplierManageModal();
+      closeTxnModal();
+      closeProfitModal();
+      closeWin7Modal();
+    }
+
+    function highlightSelectedRow() {
+      const rows = document.querySelectorAll("#inventoryTableBody tr");
+      rows.forEach((r, idx) => {
+        if (idx === currentSelectedRowIndex) {
+          r.classList.add("selected-row");
+          r.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        } else {
+          r.classList.remove("selected-row");
+        }
+      });
+    }
 
     let deferredPrompt = null;
     window.addEventListener('beforeinstallprompt', (e) => {
@@ -1108,7 +1320,7 @@
 
       const searchTokens = query ? query.split(" ").filter(t => t.length > 0) : [];
 
-      const filtered = state.items.filter(item => {
+      filteredItemsList = state.items.filter(item => {
         const name = (item.name || "").toLowerCase();
         const comp = (item.company || "").toLowerCase();
         const supp = (item.supplier || "").toLowerCase();
@@ -1165,12 +1377,16 @@
       document.getElementById("statExpiring").innerText = expiringBatchesCount;
       document.getElementById("statPendingExpiryClaims").innerText = `₹${Math.round(pendingClaimsSum).toLocaleString('en-IN')}`;
 
-      if (filtered.length === 0) {
+      if (filteredItemsList.length === 0) {
         tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 font-bold text-base">No items match your search or filter criteria.</td></tr>`;
         return;
       }
 
-      filtered.forEach(item => {
+      if (currentSelectedRowIndex >= filteredItemsList.length) {
+        currentSelectedRowIndex = 0;
+      }
+
+      filteredItemsList.forEach((item, idx) => {
         const uSize = Number(item.unitSize) || 1;
         const totPacks = getItemTotalStock(item);
         const totUnits = totPacks * uSize;
@@ -1192,8 +1408,14 @@
           }).join(" ");
         }
 
+        const isSelected = (idx === currentSelectedRowIndex);
         const tr = document.createElement("tr");
-        tr.className = "hover:bg-emerald-50/50 transition font-medium text-slate-800";
+        tr.className = `hover:bg-emerald-50/50 transition font-medium text-slate-800 ${isSelected ? 'selected-row' : ''}`;
+        tr.onclick = () => {
+          currentSelectedRowIndex = idx;
+          highlightSelectedRow();
+        };
+
         tr.innerHTML = `
           <td class="p-3.5 font-bold text-slate-900">
             <div class="text-base font-extrabold flex items-center gap-2 flex-wrap">
@@ -1222,21 +1444,35 @@
             <div class="text-xs text-slate-600 mt-0.5 font-mono font-bold">${totUnits} loose units</div>
           </td>
           <td class="p-3.5 text-right space-x-1 whitespace-nowrap">
-            <button onclick="openItemLedgerModal('${item.id}')" title="View Batch Ledger" class="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-emerald-900 rounded-lg border border-slate-300 font-extrabold text-xs">
-              <i class="fa-solid fa-book-open"></i> Ledger
-            </button>
+            <div class="inline-block has-tooltip">
+              <button onclick="openItemLedgerModal('${item.id}')" class="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-emerald-900 rounded-lg border border-slate-300 font-extrabold text-xs">
+                <i class="fa-solid fa-book-open"></i> Ledger
+              </button>
+              <span class="tooltip-box">Shortcut: <b>Ctrl+L</b></span>
+            </div>
+
             <button onclick="quickAddOrderPrompt('${item.id}')" title="Add to Stockist Order" class="px-2.5 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-lg border border-amber-300 font-bold text-xs">
               <i class="fa-solid fa-cart-plus"></i>
             </button>
-            <button onclick="openTxnModal('${item.id}')" title="Debit / Credit / Expiry Note" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg border border-slate-300 font-bold text-xs">
-              <i class="fa-solid fa-right-left"></i>
-            </button>
+
+            <div class="inline-block has-tooltip">
+              <button onclick="openTxnModal('${item.id}')" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg border border-slate-300 font-bold text-xs">
+                <i class="fa-solid fa-right-left"></i>
+              </button>
+              <span class="tooltip-box">Debit/Credit: <b>Ctrl+D</b></span>
+            </div>
+
             <button onclick="duplicateMasterItem('${item.id}')" title="Duplicate Master Item" class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-800 rounded-lg border border-indigo-200 text-xs font-bold">
               <i class="fa-solid fa-copy"></i>
             </button>
-            <button onclick="editItem('${item.id}')" title="Edit Master (PIN)" class="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg border border-slate-300 text-xs font-bold">
-              <i class="fa-solid fa-pencil"></i>
-            </button>
+
+            <div class="inline-block has-tooltip">
+              <button onclick="editItem('${item.id}')" class="px-2.5 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-800 rounded-lg border border-slate-300 text-xs font-bold">
+                <i class="fa-solid fa-pencil"></i>
+              </button>
+              <span class="tooltip-box">Edit: <b>Ctrl+E</b></span>
+            </div>
+
             <button onclick="deleteItem('${item.id}')" title="Delete Item (PIN)" class="px-2.5 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg border border-rose-300 text-xs font-bold">
               <i class="fa-solid fa-trash"></i>
             </button>
@@ -1244,21 +1480,6 @@
         `;
         tbody.appendChild(tr);
       });
-    }
-
-    function openItemModal(isEdit = false) {
-      document.getElementById("itemForm").reset();
-      document.getElementById("editItemId").value = "";
-      document.getElementById("unitSize").value = "10";
-      document.getElementById("itemModalTitle").innerText = isEdit ? "Edit Master Item" : "Add New Master Item";
-      calculatePerUnitPreview();
-      document.getElementById("itemModal").classList.remove("hidden");
-      document.getElementById("itemModal").classList.add("flex");
-    }
-
-    function closeItemModal() {
-      document.getElementById("itemModal").classList.add("hidden");
-      document.getElementById("itemModal").classList.remove("flex");
     }
 
     function duplicateMasterItem(id) {
@@ -1596,7 +1817,7 @@
     }
 
     // ==========================================
-    // TRANSACTION LOGIC (SALE / CREDIT / EXPIRY RETURN)
+    // TRANSACTION LOGIC
     // ==========================================
     function formatInvoiceNumber(seq) {
       const numStr = String(seq).padStart(2, '0');
@@ -1659,6 +1880,7 @@
       toggleTxnFields();
       document.getElementById("txnModal").classList.remove("hidden");
       document.getElementById("txnModal").classList.add("flex");
+      setTimeout(() => document.getElementById("txnQty").focus(), 50);
     }
 
     function onQtyModeChanged() {
@@ -2217,6 +2439,7 @@
       document.getElementById("profitContent").classList.add("hidden");
       document.getElementById("profitModal").classList.remove("hidden");
       document.getElementById("profitModal").classList.add("flex");
+      setTimeout(() => document.getElementById("pinInput").focus(), 50);
     }
 
     function closeProfitModal() {
