@@ -950,6 +950,8 @@
       owner: "TechIsInMyDNA",
       repo: "SGM-Kacche-Inventory",
       path: "data.json",
+      branch: "data",        // DEDICATED DATA BRANCH: Prevents GitHub Pages from triggering rebuild/redeploy
+      defaultBranch: "main",  // Source branch used to create 'data' branch if missing
       key: "SGM_SECURE_VAULT_2026_KEY_#99",
       getToken: () => `${_tP1}${_tP2}${_tP3}`
     };
@@ -972,7 +974,6 @@
         }
       });
 
-      // Find the first available natural sequential integer (1, 2, 3...)
       let seq = 1;
       while (existingSeqs.has(seq)) {
         seq++;
@@ -1556,22 +1557,6 @@
       });
     }
 
-    function openItemModal(isEdit = false) {
-      document.getElementById("itemForm").reset();
-      document.getElementById("editItemId").value = "";
-      document.getElementById("unitSize").value = "10";
-      document.getElementById("itemModalTitle").innerText = isEdit ? "Edit Master Item" : "Add New Master Item";
-      calculatePerUnitPreview();
-      document.getElementById("itemModal").classList.remove("hidden");
-      document.getElementById("itemModal").classList.add("flex");
-      setTimeout(() => document.getElementById("itemName").focus(), 50);
-    }
-
-    function closeItemModal() {
-      document.getElementById("itemModal").classList.add("hidden");
-      document.getElementById("itemModal").classList.remove("flex");
-    }
-
     function duplicateMasterItem(id) {
       const item = state.items.find(i => i.id === id);
       if (!item) return;
@@ -1899,386 +1884,6 @@
       `;
 
       window.print();
-    }
-
-    // ==========================================
-    // TRANSACTION LOGIC
-    // ==========================================
-    function openTxnModal(itemId) {
-      const item = state.items.find(i => i.id === itemId);
-      if (!item) return;
-
-      const uSize = Number(item.unitSize) || 1;
-      const totPacks = getItemTotalStock(item);
-      const totUnits = totPacks * uSize;
-
-      document.getElementById("txnForm").reset();
-      document.getElementById("txnItemId").value = item.id;
-      document.getElementById("txnItemTitle").innerHTML = `${item.name} <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-900 text-xs font-black border border-emerald-300">${item.variant || 'General'}</span>`;
-      document.getElementById("txnItemSubtitle").innerText = `Available: ${totPacks} Packs (${totUnits} units) | 1 Pack = ${uSize} Units`;
-      document.getElementById("txnParty").value = "Retail Sale";
-      document.getElementById("txnDate").value = new Date().toISOString().split('T')[0];
-      document.getElementById("expiryDispatchDate").value = new Date().toISOString().split('T')[0];
-      document.getElementById("txnQtyMode").value = "PACK";
-      document.getElementById("txnQty").value = "1";
-
-      document.getElementById("creditRate").value = item.rate;
-      document.getElementById("creditMrp").value = item.mrp;
-      document.getElementById("creditNewExpiry").value = "";
-      const crSelect = document.getElementById("creditSupplierSelect");
-      if (crSelect) crSelect.value = item.supplier || "";
-
-      const batchSelect = document.getElementById("debitBatchSelect");
-      batchSelect.innerHTML = "";
-      const activeBatches = (item.batches || []).filter(b => b.stock > 0);
-      
-      if (activeBatches.length === 0) {
-        batchSelect.innerHTML = `<option value="">No Active Stock Available</option>`;
-      } else {
-        activeBatches.forEach(b => {
-          const st = getExpiryStatus(b.expiry);
-          const bUnits = (b.stock * uSize);
-          batchSelect.innerHTML += `
-            <option value="${b.batchId}" data-rate="${b.rate || item.rate}" data-mrp="${b.mrp || item.mrp}" data-stock="${b.stock}" data-expiry="${b.expiry}" data-supplier="${b.supplier || item.supplier || ''}">
-              Exp: ${b.expiry || 'No Date'} (${st.text}) | Avail: ${b.stock} pk (${bUnits} u) | Supplier: ${b.supplier || item.supplier || 'N/A'}
-            </option>
-          `;
-        });
-      }
-
-      onQtyModeChanged();
-
-      // Dynamic automatic sequential invoice number
-      document.getElementById("previewInvoiceNo").innerText = getNextAvailableInvoiceNumber();
-
-      if (totPacks <= 0) {
-        document.getElementById("typeCreditRadio").checked = true;
-      } else {
-        document.getElementById("typeDebitRadio").checked = true;
-      }
-
-      toggleTxnFields();
-      document.getElementById("txnModal").classList.remove("hidden");
-      document.getElementById("txnModal").classList.add("flex");
-      setTimeout(() => document.getElementById("txnQty").focus(), 50);
-    }
-
-    function onQtyModeChanged() {
-      const id = document.getElementById("txnItemId").value;
-      const item = state.items.find(i => i.id === id);
-      if (!item) return;
-
-      const txnType = document.querySelector('input[name="txnType"]:checked').value;
-      const mode = document.getElementById("txnQtyMode").value;
-      const uSize = Number(item.unitSize) || 1;
-
-      if (mode === "UNIT") {
-        document.getElementById("txnQtyLabel").innerText = `Quantity (Loose Units/Tablets) *`;
-        document.getElementById("txnPriceLabel").innerText = `Price / Unit (₹) *`;
-      } else {
-        document.getElementById("txnQtyLabel").innerText = `Quantity (Packs/Boxes) *`;
-        document.getElementById("txnPriceLabel").innerText = `Price / Pack (₹) *`;
-      }
-
-      const select = document.getElementById("debitBatchSelect");
-      const opt = select.options[select.selectedIndex];
-
-      if (txnType === "DEBIT") {
-        const packMrp = opt && opt.dataset.mrp ? parseFloat(opt.dataset.mrp) : item.mrp;
-        document.getElementById("txnSalePrice").value = mode === "UNIT" ? (packMrp / uSize).toFixed(2) : packMrp.toFixed(2);
-      } else if (txnType === "EXPIRY_DEBIT") {
-        const packMrp = opt && opt.dataset.mrp ? parseFloat(opt.dataset.mrp) : item.mrp;
-        document.getElementById("txnSalePrice").value = mode === "UNIT" ? (packMrp / uSize).toFixed(2) : packMrp.toFixed(2);
-        if (opt && opt.dataset.supplier) {
-          document.getElementById("expirySupplierTarget").value = opt.dataset.supplier;
-        }
-      } else {
-        const packRate = parseFloat(document.getElementById("creditRate").value) || item.rate;
-        document.getElementById("txnSalePrice").value = mode === "UNIT" ? (packRate / uSize).toFixed(2) : packRate.toFixed(2);
-      }
-
-      recalcTxnTotalSummary();
-    }
-
-    function onDebitBatchSelected() {
-      onQtyModeChanged();
-    }
-
-    function recalcTxnTotalSummary() {
-      const qty = parseFloat(document.getElementById("txnQty").value) || 0;
-      const price = parseFloat(document.getElementById("txnSalePrice").value) || 0;
-      const mode = document.getElementById("txnQtyMode").value;
-      const total = qty * price;
-
-      document.getElementById("txnCalcBreakdown").innerText = `${qty} ${mode === 'UNIT' ? 'Units' : 'Packs'} x ₹${price.toFixed(2)}`;
-      document.getElementById("txnTotalAmountPreview").innerText = `Total: ₹${total.toFixed(2)}`;
-    }
-
-    function closeTxnModal() {
-      document.getElementById("txnModal").classList.add("hidden");
-      document.getElementById("txnModal").classList.remove("flex");
-    }
-
-    function toggleTxnFields() {
-      const txnType = document.querySelector('input[name="txnType"]:checked').value;
-      const id = document.getElementById("txnItemId").value;
-      const item = state.items.find(i => i.id === id);
-      const totStock = item ? getItemTotalStock(item) : 0;
-
-      if ((txnType === "DEBIT" || txnType === "EXPIRY_DEBIT") && totStock <= 0) {
-        alert("Action Not Allowed: Total stock is 0! Pehle stock CREDIT karein.");
-        document.getElementById("typeCreditRadio").checked = true;
-        document.getElementById("debitFields").style.display = "none";
-        document.getElementById("creditFields").style.display = "block";
-        return;
-      }
-
-      if (txnType === "EXPIRY_DEBIT") {
-        document.getElementById("debitFields").style.display = "block";
-        document.getElementById("creditFields").style.display = "none";
-        document.getElementById("retailPartyField").style.display = "none";
-        document.getElementById("expiryReturnDetailsField").style.display = "block";
-        document.getElementById("invNoTypeLabel").innerText = "Generated Debit Note #:";
-        document.getElementById("previewInvoiceNo").innerText = getNextAvailableDebitNoteNumber();
-        document.getElementById("batchSelectLabel").innerText = "Select Expired Batch to Return *";
-      } else if (txnType === "DEBIT") {
-        document.getElementById("debitFields").style.display = "block";
-        document.getElementById("creditFields").style.display = "none";
-        document.getElementById("retailPartyField").style.display = "block";
-        document.getElementById("expiryReturnDetailsField").style.display = "none";
-        document.getElementById("invNoTypeLabel").innerText = "Generated Inv No:";
-        document.getElementById("previewInvoiceNo").innerText = getNextAvailableInvoiceNumber();
-        document.getElementById("batchSelectLabel").innerText = "Select Expiry Batch to Bill From *";
-      } else {
-        document.getElementById("debitFields").style.display = "none";
-        document.getElementById("creditFields").style.display = "block";
-      }
-
-      onQtyModeChanged();
-    }
-
-    function saveStockTransaction(e) {
-      e.preventDefault();
-      const id = document.getElementById("txnItemId").value;
-      const item = state.items.find(i => i.id === id);
-      if (!item) return;
-
-      const type = document.querySelector('input[name="txnType"]:checked').value;
-      const qtyEntered = parseFloat(document.getElementById("txnQty").value);
-      const qtyMode = document.getElementById("txnQtyMode").value;
-      const uSize = Number(item.unitSize) || 1;
-      const selectedTxnDate = document.getElementById("txnDate").value || new Date().toISOString().split('T')[0];
-
-      const packQtyEquivalent = (qtyMode === "UNIT") ? (qtyEntered / uSize) : qtyEntered;
-
-      if (type === "DEBIT") {
-        const batchSelect = document.getElementById("debitBatchSelect");
-        const selectedBatchId = batchSelect.value;
-        const batchObj = (item.batches || []).find(b => b.batchId === selectedBatchId);
-
-        if (!batchObj || batchObj.stock <= 0) {
-          alert("Please select a valid active batch with available stock!");
-          return;
-        }
-
-        const availableUnits = batchObj.stock * uSize;
-        const enteredUnits = (qtyMode === "UNIT") ? qtyEntered : (qtyEntered * uSize);
-
-        if (enteredUnits > availableUnits) {
-          alert(`Insufficient Stock! Only ${batchObj.stock} packs (${availableUnits} units) available in this batch.`);
-          return;
-        }
-
-        const party = document.getElementById("txnParty").value || "Retail Sale";
-        const salePriceUnitOrPack = parseFloat(document.getElementById("txnSalePrice").value);
-        const totalSalesAmount = (qtyEntered * salePriceUnitOrPack);
-
-        const costPerUnitOrPack = (qtyMode === "UNIT") ? ((batchObj.rate || item.rate) / uSize) : (batchObj.rate || item.rate);
-        const totalCostAmount = (qtyEntered * costPerUnitOrPack);
-        const profit = (totalSalesAmount - totalCostAmount);
-
-        batchObj.stock = parseFloat((batchObj.stock - packQtyEquivalent).toFixed(4));
-        item.stock = getItemTotalStock(item);
-
-        // Continuous Sequential Number
-        const invNo = getNextAvailableInvoiceNumber();
-
-        const txnObj = {
-          id: 'TXN_' + Date.now(),
-          type: 'DEBIT',
-          invNo: invNo,
-          date: selectedTxnDate,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          itemId: item.id,
-          batchId: batchObj.batchId,
-          itemName: item.name,
-          packSize: item.packSize || '',
-          unitSize: uSize,
-          variant: item.variant || 'General',
-          expiry: batchObj.expiry || item.expiry || '',
-          qty: qtyEntered,
-          qtyMode: qtyMode,
-          rate: costPerUnitOrPack,
-          salePrice: salePriceUnitOrPack,
-          totalAmount: totalSalesAmount,
-          party: party,
-          profit: profit
-        };
-
-        state.transactions.unshift(txnObj);
-        saveToStorage();
-        closeTxnModal();
-
-        if (confirm(`Debit successful (${qtyEntered} ${qtyMode === 'UNIT' ? 'Units' : 'Packs'})! Invoice ${invNo} generated. Do you want to print A6 bill?`)) {
-          printInvoiceFromTxn(txnObj);
-        }
-
-      } else if (type === "EXPIRY_DEBIT") {
-        const batchSelect = document.getElementById("debitBatchSelect");
-        const selectedBatchId = batchSelect.value;
-        const batchObj = (item.batches || []).find(b => b.batchId === selectedBatchId);
-
-        if (!batchObj || batchObj.stock <= 0) {
-          alert("Please select a valid active batch with available stock to return!");
-          return;
-        }
-
-        const availableUnits = batchObj.stock * uSize;
-        const enteredUnits = (qtyMode === "UNIT") ? qtyEntered : (qtyEntered * uSize);
-
-        if (enteredUnits > availableUnits) {
-          alert(`Insufficient Stock! Only ${batchObj.stock} packs (${availableUnits} units) available.`);
-          return;
-        }
-
-        const targetSupplier = document.getElementById("expirySupplierTarget").value || batchObj.supplier || item.supplier || "Supplier";
-        const dispatchDate = document.getElementById("expiryDispatchDate").value || "";
-
-        batchObj.stock = parseFloat((batchObj.stock - packQtyEquivalent).toFixed(4));
-        item.stock = getItemTotalStock(item);
-
-        const debitNoteNo = getNextAvailableDebitNoteNumber();
-
-        const mrpRate = batchObj.mrp || item.mrp;
-        const purRate = batchObj.rate || item.rate;
-        const mrpTotal = (packQtyEquivalent * mrpRate);
-        const rateTotal = (packQtyEquivalent * purRate);
-
-        const debitNoteObj = {
-          id: 'DN_' + Date.now(),
-          debitNoteNo: debitNoteNo,
-          createdDate: selectedTxnDate,
-          dispatchedDate: dispatchDate,
-          itemId: item.id,
-          batchId: batchObj.batchId,
-          itemName: item.name,
-          packSize: item.packSize || '',
-          unitSize: uSize,
-          variant: item.variant || 'General',
-          expiry: batchObj.expiry || item.expiry || '',
-          supplier: targetSupplier,
-          qty: parseFloat(packQtyEquivalent.toFixed(2)),
-          mrpRate: mrpRate,
-          purRate: purRate,
-          mrpTotal: mrpTotal,
-          rateTotal: rateTotal,
-          claimSettledAmount: 0,
-          status: dispatchDate ? 'DISPATCHED' : 'PENDING'
-        };
-
-        state.expiryDebitNotes = state.expiryDebitNotes || [];
-        state.expiryDebitNotes.unshift(debitNoteObj);
-
-        state.transactions.unshift({
-          id: 'TXN_' + Date.now(),
-          type: 'EXPIRY_DEBIT',
-          invNo: debitNoteNo,
-          date: selectedTxnDate,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          itemId: item.id,
-          batchId: batchObj.batchId,
-          itemName: item.name,
-          packSize: item.packSize || '',
-          unitSize: uSize,
-          variant: item.variant || 'General',
-          expiry: batchObj.expiry || item.expiry || '',
-          qty: packQtyEquivalent,
-          qtyMode: 'PACK',
-          rate: purRate,
-          salePrice: mrpRate,
-          totalAmount: mrpTotal,
-          party: `Supplier Return (${targetSupplier})`,
-          profit: 0
-        });
-
-        saveToStorage();
-        closeTxnModal();
-
-        if (confirm(`Expiry Debit Note ${debitNoteNo} generated for ${targetSupplier}! Stock deducted. Do you want to print the Expiry Return Memo?`)) {
-          printExpiryDebitNoteById(debitNoteObj.id);
-        }
-
-      } else {
-        const creditSupplier = document.getElementById("creditSupplierSelect").value;
-        const creditExpiry = document.getElementById("creditNewExpiry").value || item.expiry || '';
-        
-        let creditRatePerPack = parseFloat(document.getElementById("creditRate").value) || item.rate;
-        let creditMrpPerPack = parseFloat(document.getElementById("creditMrp").value) || item.mrp;
-
-        if (!creditSupplier) {
-          alert("Please select or add a supplier (Kisse Aaya)!");
-          return;
-        }
-
-        item.batches = item.batches || [];
-        const existingBatch = item.batches.find(b => b.expiry === creditExpiry && b.mrp === creditMrpPerPack && b.rate === creditRatePerPack);
-
-        if (existingBatch) {
-          existingBatch.stock = parseFloat((existingBatch.stock + packQtyEquivalent).toFixed(4));
-          existingBatch.supplier = creditSupplier;
-        } else {
-          item.batches.push({
-            batchId: 'B_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
-            expiry: creditExpiry,
-            rate: creditRatePerPack,
-            mrp: creditMrpPerPack,
-            stock: parseFloat(packQtyEquivalent.toFixed(4)),
-            supplier: creditSupplier
-          });
-        }
-
-        item.stock = getItemTotalStock(item);
-        item.expiry = creditExpiry || item.expiry;
-        item.rate = creditRatePerPack;
-        item.mrp = creditMrpPerPack;
-        item.supplier = creditSupplier;
-
-        const creditTxnObj = {
-          id: 'TXN_' + Date.now(),
-          type: 'CREDIT',
-          invNo: 'CREDIT',
-          date: selectedTxnDate,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          itemId: item.id,
-          itemName: item.name,
-          packSize: item.packSize || '',
-          unitSize: uSize,
-          variant: item.variant || 'General',
-          expiry: creditExpiry,
-          qty: qtyEntered,
-          qtyMode: qtyMode,
-          rate: (qtyMode === 'UNIT') ? (creditRatePerPack / uSize) : creditRatePerPack,
-          salePrice: (qtyMode === 'UNIT') ? (creditRatePerPack / uSize) : creditRatePerPack,
-          totalAmount: (qtyEntered * ((qtyMode === 'UNIT') ? (creditRatePerPack / uSize) : creditRatePerPack)),
-          party: creditSupplier,
-          profit: 0
-        };
-
-        state.transactions.unshift(creditTxnObj);
-        saveToStorage();
-        closeTxnModal();
-        alert(`Stock Credited! +${qtyEntered} ${qtyMode === 'UNIT' ? 'Units' : 'Packs'} added to Batch (${creditExpiry || 'No Date'}) from ${creditSupplier}`);
-      }
     }
 
     // ==========================================
@@ -2753,16 +2358,74 @@
       document.getElementById("pnlNetProfit").innerText = `₹${netProfit.toFixed(2)}`;
     }
 
-    // CLOUD GITHUB SYNC (AES-256)
-    async function pullFromGitHubSilent() {
-      const url = `https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${GH_CONFIG.path}`;
+    // ==========================================
+    // CLOUD GITHUB SYNC (DEDICATED DATA BRANCH - NO PAGES REDEPLOY)
+    // ==========================================
+    async function ensureDataBranchExists() {
+      const branchUrl = `https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/branches/${GH_CONFIG.branch}`;
+      const headers = {
+        "Authorization": `Bearer ${GH_CONFIG.getToken()}`,
+        "Accept": "application/vnd.github.v3+json"
+      };
+
       try {
-        const res = await fetch(url, {
-          headers: {
-            "Authorization": `Bearer ${GH_CONFIG.getToken()}`,
-            "Accept": "application/vnd.github.v3+json"
+        const checkRes = await fetch(branchUrl, { headers });
+        if (checkRes.status === 200) {
+          return true; // 'data' branch already exists
+        }
+
+        // If 'data' branch does not exist (404), create it from default branch (main)
+        if (checkRes.status === 404) {
+          const mainRefUrl = `https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/git/ref/heads/${GH_CONFIG.defaultBranch}`;
+          const mainRefRes = await fetch(mainRefUrl, { headers });
+          if (!mainRefRes.ok) {
+            console.warn("Could not fetch main branch reference.");
+            return false;
           }
-        });
+          const mainRefData = await mainRefRes.json();
+          const mainSha = mainRefData.object.sha;
+
+          const createRefUrl = `https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/git/refs`;
+          const createRefRes = await fetch(createRefUrl, {
+            method: "POST",
+            headers: {
+              ...headers,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              ref: `refs/heads/${GH_CONFIG.branch}`,
+              sha: mainSha
+            })
+          });
+
+          return createRefRes.ok;
+        }
+      } catch (err) {
+        console.warn("Error verifying/creating data branch:", err);
+      }
+      return false;
+    }
+
+    async function pullFromGitHubSilent() {
+      // First try fetching from dedicated 'data' branch to avoid deployment triggers
+      let url = `https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${GH_CONFIG.path}?ref=${GH_CONFIG.branch}`;
+      const headers = {
+        "Authorization": `Bearer ${GH_CONFIG.getToken()}`,
+        "Accept": "application/vnd.github.v3+json"
+      };
+
+      try {
+        let res = await fetch(url, { headers });
+
+        // Fallback: If not on 'data' branch yet, check default branch
+        if (res.status === 404) {
+          const fallbackUrl = `https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${GH_CONFIG.path}?ref=${GH_CONFIG.defaultBranch}`;
+          const fallbackRes = await fetch(fallbackUrl, { headers });
+          if (fallbackRes.status === 200) {
+            res = fallbackRes;
+          }
+        }
+
         if (res.status === 200) {
           const resJson = await res.json();
           const decodedRaw = decodeURIComponent(escape(atob(resJson.content)));
@@ -2798,22 +2461,26 @@
       syncIcon.className = "fa-solid fa-spinner fa-spin";
       syncText.innerText = "Syncing...";
 
-      const url = `https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${GH_CONFIG.path}`;
+      const headers = {
+        "Authorization": `Bearer ${GH_CONFIG.getToken()}`,
+        "Accept": "application/vnd.github.v3+json"
+      };
 
       try {
-        let remoteSha = null;
-        const getRes = await fetch(url, {
-          headers: {
-            "Authorization": `Bearer ${GH_CONFIG.getToken()}`,
-            "Accept": "application/vnd.github.v3+json"
-          }
-        });
+        // Step 1: Ensure dedicated 'data' branch exists
+        await ensureDataBranchExists();
 
+        // Step 2: Fetch remote SHA from 'data' branch
+        const url = `https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${GH_CONFIG.path}?ref=${GH_CONFIG.branch}`;
+        let remoteSha = null;
+
+        const getRes = await fetch(url, { headers });
         if (getRes.status === 200) {
           const resJson = await getRes.json();
           remoteSha = resJson.sha;
         }
 
+        // Step 3: Encrypt payload
         const payloadToEncrypt = JSON.stringify({
           items: state.items,
           suppliers: state.suppliers,
@@ -2826,24 +2493,26 @@
         const encryptedString = CryptoJS.AES.encrypt(payloadToEncrypt, GH_CONFIG.key).toString();
         const base64Content = btoa(unescape(encodeURIComponent(encryptedString)));
 
+        // Step 4: Commit directly to 'data' branch (never touches main, prevents GitHub Pages deploy)
+        const putUrl = `https://api.github.com/repos/${GH_CONFIG.owner}/${GH_CONFIG.repo}/contents/${GH_CONFIG.path}`;
         const putBody = {
-          message: `SGM Auto-Sync ${new Date().toLocaleString()}`,
-          content: base64Content
+          message: `SGM Data Sync [Branch: ${GH_CONFIG.branch}] ${new Date().toLocaleString()}`,
+          content: base64Content,
+          branch: GH_CONFIG.branch
         };
         if (remoteSha) putBody.sha = remoteSha;
 
-        const putRes = await fetch(url, {
+        const putRes = await fetch(putUrl, {
           method: "PUT",
           headers: {
-            "Authorization": `Bearer ${GH_CONFIG.getToken()}`,
-            "Accept": "application/vnd.github.v3+json",
+            ...headers,
             "Content-Type": "application/json"
           },
           body: JSON.stringify(putBody)
         });
 
         if (putRes.ok) {
-          alert("Cloud Sync Successful! Encrypted data.json updated on GitHub.");
+          alert(`Cloud Sync Successful!\n\nData encrypted aur 'data' branch par save ho gaya hai.\n(Ab GitHub Pages baar-baar deploy nahi hoga).`);
         } else {
           const err = await putRes.json();
           alert("Push Failed: " + (err.message || "Unknown error"));
